@@ -35,6 +35,12 @@ class LiverSegmentation(BaseModule):
             - dcm : ?
         '''
 
+        if '.nii' in path:
+            raise NotImplementedError('TODO : .nii is not clear about horizontal or vertical shape.')
+
+        elif '.dcm' in path:
+            raise ValueError('.dcm is not supported. Please convert dcm dummies to analyze format.')
+
         mean_std = [29.311405133024834, 43.38181786843102]
         image = sitk.ReadImage(path)
         space = image.GetSpacing()
