@@ -2,38 +2,42 @@
 
 * 이 저장소는 MI2RL 연구실의 내부 코드를 정리하기 위한 목적으로 만들어졌습니다.
 * **Contributor** 
-  * 조성만, 김성철, 김민규, 조경진, 장미소
+  * Commiter : 김규리, 서지연, 박주영, 김민규, 조경진, 김다은, 남유진
+  * Reviewer : 조성만, 김성철
+  * 데이터 공개 범위 논의 및 IRB :장미소
 
+## Docker 
 
+https://hub.docker.com/layers/mi2rl/mi2rl_image/latest/images/sha256-27b571a1237808b15796ca60e2076621d84266af159eebfb63951c825a58d0d5?context=repo
 
 
 
 ## Classification, Regression, Segmentation, Detection
 
-| Modality | Part       | Module                                 | Results                                 | Paper | Weights | Docker |
-| -------- | ---------- | -------------------------------------- | --------------------------------------- | ----- | ------- | ------ |
-| X-ray    | ChestPA    | Age Regression                         | Acc: 70.4 (in 4years)                   | -     | link    | link   |
-| X-ray    | ChestPA    | Sex Clasisifcation                     | Acc: 99.6                               | -     |         |        |
-| X-ray    | ChestPA/AP | Lung Segmentation                      | Acc:                                    | -     | link    | link   |
-| X-ray    | Chest      | Cardiomegaly Classification            | Acc: 91.4                               | -     | link    | link   |
-| X-ray    | ChestPA    | Osteoporosis Classification            | Acc: 83.0 (40세 이상)                   | -     | link    | link   |
-| X-ray    | Chest      | F/U Classification                     | -                                       | -     | -       | link   |
-| CT       | Chest      | Contrast / Non-Contrast Classification | Acc: 96.0                               | -     | link    | link   |
-| CT       | ?          | IPF Progression Prediction             | -                                       | -     | link    | link   |
-| CT       | Brain      | Anomaly Detection                      | -                                       | -     | link    | link   |
-| CT       | Lung       | Nodule Segmentation & Generation       | Dice: 0.813 <br />RMSE:  0.0057(nodule) | -     | link    | link   |
-| CT       | Lung       | Artery/Vein Seperation in Vessel Mask  | -                                       | -     | link    | link   |
-| CT       | Abdomen    | Kidney, Tumor Segmentation             | -                                       | -     | link    | link   |
-| CT       | Abdomen    | Liver Segmentation                     | -                                       | -     | link    | link   |
-| CT       | Abdomen    | Liver Vessel Segmentation              | -                                       | -     | link    | link   |
-| CT       | Abdomen    | Liver HCC Segmentation                 | -                                       | -     | link    | link   |
-| OCTA     | Retina     | Vessel Segmentation                    | -                                       | -     | -       | -      |
-| RGB      | Retina     | Optic disc Segmentation                | Acc: 100%                               | -     | link    | link   |
-| RGB      | Retina     | Vessel Segmentation                    | -                                       | -     | -       | link   |
-| RGB      | ENT        | ENT Instance Segmentation              | -                                       | -     | link    | link   |
-| RGB      | Face       | DO Not Touch your face                 | Acc: 94%                                | -     | link    | link   |
-| RGB      | -          | Hand Hygiene Monitoring                |                                         | link  | link    | link   |
-| MRI      | Brain      | Blackblood Segmentation                | Dice: 0.808                             | -     | link    | link   |
+| Modality | Part       | Module                                 | Results                                 | Paper | Weights |
+| -------- | ---------- | -------------------------------------- | --------------------------------------- | ----- | ------- |
+| X-ray    | ChestPA    | Age Regression                         | Acc: 70.4 (in 4years)                   | -     | link    |
+| X-ray    | ChestPA    | Sex Clasisifcation                     | Acc: 99.6                               | -     |         |
+| X-ray    | ChestPA/AP | Lung Segmentation                      | Acc:                                    | -     | link    |
+| X-ray    | Chest      | Cardiomegaly Classification            | Acc: 91.4                               | -     | link    |
+| X-ray    | ChestPA    | Osteoporosis Classification            | Acc: 83.0 (40세 이상)                   | -     | link    |
+| X-ray    | Chest      | F/U Classification                     | -                                       | -     | -       |
+| CT       | Chest      | Contrast / Non-Contrast Classification | Acc: 96.0                               | -     | link    |
+| CT       | ?          | IPF Progression Prediction             | -                                       | -     | link    |
+| CT       | Brain      | Anomaly Detection                      | -                                       | -     | link    |
+| CT       | Lung       | Nodule Segmentation & Generation       | Dice: 0.813 <br />RMSE:  0.0057(nodule) | -     | link    |
+| CT       | Lung       | Artery/Vein Seperation in Vessel Mask  | -                                       | -     | link    |
+| CT       | Abdomen    | Kidney, Tumor Segmentation             | -                                       | -     | link    |
+| CT       | Abdomen    | Liver Segmentation                     | -                                       | -     | link    |
+| CT       | Abdomen    | Liver Vessel Segmentation              | -                                       | -     | link    |
+| CT       | Abdomen    | Liver HCC Segmentation                 | -                                       | -     | link    |
+| OCTA     | Retina     | Vessel Segmentation                    | -                                       | -     | -       |
+| RGB      | Retina     | Optic disc Segmentation                | Acc: 100%                               | -     | link    |
+| RGB      | Retina     | Vessel Segmentation                    | -                                       | -     | -       |
+| RGB      | ENT        | ENT Instance Segmentation              | -                                       | -     | link    |
+| RGB      | Face       | DO Not Touch your face                 | Acc: 94%                                | -     | link    |
+| RGB      | -          | Hand Hygiene Monitoring                |                                         | link  | link    |
+| MRI      | Brain      | Blackblood Segmentation                | Dice: 0.808                             | -     | link    |
 
 
 
