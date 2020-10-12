@@ -36,7 +36,9 @@ class AgeRegressor(BaseModule):
         np_img[np_img>1] = 1
         np_img *= (2**8-1)
         np_img = np_img.astype(np.uint8)
-
+        
+        # convert shape [b, h, w, c]
+        np_img = np.expand_dims(np.expand_dims(np_img, 0), -1)
         return np_img
     
     def predict(self, path):
@@ -49,6 +51,7 @@ class AgeRegressor(BaseModule):
             (int) age : age prediction result (Month)
         """
         img = self._preprocessing(path)
+        print(img.shape)
         assert (img.shape[1] == 512) & (img.shape[2] == 512), "The size of image must be (batch, 512, 512, 1)"
         # in training pahse, we normalize value by divide 1200.
         # so if we want to get real value(age), have to multiply 1200.
@@ -81,6 +84,9 @@ class ViewpointClassifier(BaseModule):
         np_img[np_img>1] = 1
         np_img *= (2**8-1)
         np_img = np_img.astype(np.uint8)
+        
+        # convert shape [b, h, w, c]
+        np_img = np.expand_dims(np.expand_dims(np_img, 0), -1)
 
         return np_img
         
@@ -105,11 +111,11 @@ from pydicom.pixel_data_handlers import gdcm_handler
 from numpy import newaxis
 
 class EnhanceCTClassifier(BaseModule):
-    """ Classify Enhanced CT vs Non-Enhanced CV """
+    """ Classify Enhanced CT vs Non-Enhanced CT """
 
-    def init(self, weight_path, in_ch):
+    def init(self, weight_path, in_ch=2):
         self.in_ch = in_ch
-        self.model = build_enhance_classifier(weight_path, self.in_ch)
+        self.model = build_enhanceCT_classifier(weight_path, self.in_ch)
 
     def _preprocessing(self, path):
         """
@@ -130,30 +136,34 @@ class EnhanceCTClassifier(BaseModule):
             ds.decompress()
         
         img = ds.pixel_array
-        intercept = ds.RescaleIntercept
-        tmp_img = img.astype('float32')
-        tmp_img2 = np.copy(tmp_img)
-        
-        window_width = 2048.
-        window_level = 1024.
+        try:
+            intercept = ds.RescaleIntercept # if not CT, it will raise error
+            tmp_img = img.astype('float32')
+            tmp_img2 = np.copy(tmp_img)
+            
+            window_width = 2048.
+            window_level = 1024.
 
-        lower = (window_level-window_width)
-        upper = (window_level+window_width)
+            lower = (window_level-window_width)
+            upper = (window_level+window_width)
 
-        tmp_img -= (lower - intercept)
-        tmp_img /= (upper + 1024)
-        tmp_img[tmp_img < 0] = 0.
-        tmp_img[tmp_img > 1] = 1.
-        tmp_img = cv2.resize(tmp_img, (h, w), interpolation = cv2.INTER_AREA)
-        tmp_img = tmp_img[:, :, newaxis]
+            tmp_img -= (lower - intercept)
+            tmp_img /= (upper + 1024)
+            tmp_img[tmp_img < 0] = 0.
+            tmp_img[tmp_img > 1] = 1.
+            tmp_img = cv2.resize(tmp_img, (h, w), interpolation = cv2.INTER_AREA)
+            tmp_img = tmp_img[:, :, newaxis]
 
-        tmp_img2[tmp_img2 == -2000] = 0.
-        tmp_img2 -= (-1024. - intercept)
-        tmp_img2 /= 4096
-        tmp_img2 = cv2.resize(tmp_img2, (height, width), interpolation = cv2.INTER_AREA)
-        tmp_img2 = tmp_img2[:, :, newaxis]
+            tmp_img2[tmp_img2 == -2000] = 0.
+            tmp_img2 -= (-1024. - intercept)
+            tmp_img2 /= 4096
+            tmp_img2 = cv2.resize(tmp_img2, (height, width), interpolation = cv2.INTER_AREA)
+            tmp_img2 = tmp_img2[:, :, newaxis]
 
-        results = np.concatenate((tmp_img, tmp_img2), axis=2) 
+            results = np.concatenate((tmp_img, tmp_img2), axis=2)
+        except:
+            print('please check your image modality, you have to input CT')
+            raise
         return results
 
     def predict(self, path):
