@@ -8,7 +8,7 @@ from ..base import BaseModule
 from .age_regression.load_model import build_age_regressor
 from .viewpoint_classification.load_model import build_view_classifier
 from .enhance_classification.load_model import build_enhanceCT_classifier
-from ..preprocessing.dicom_handler import DicomHandler
+from ..Preprocessing.dicom_handler import DicomHandler
 
 
 class AgeRegressor(BaseModule):

@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 import sys
+import SimpleITK as sitk
 
 from ..base import BaseModule
 from .age_regression.load_model import build_age_regressor
 from .viewpoint_classification.load_model import build_view_classifier
 from .enhance_classification.load_model import build_enhanceCT_classifier
-from ..preprocessing.dicom_handler import DicomHandler
 
 
 class AgeRegressor(BaseModule):
@@ -24,9 +24,20 @@ class AgeRegressor(BaseModule):
         Return:
             (numpy ndarray) img 
         """
-        dicom_handler = DicomHandler()
-        img = dicom_handler(path, out_size=(512,512), out_channels=1, percentile=99)
-        return img
+        img = sitk.GetArrayFromImage(sitk.ReadImage(path))
+        img = img[0]
+
+        img = cv2.resize(img, (512,512), interpolation=cv2.INTER_LINEAR)
+
+        np_img = img.astype(np.float32)
+        np_img -= np.min(np_img)
+        np_img /= np.percentile(np_img, 99)
+
+        np_img[np_img>1] = 1
+        np_img *= (2**8-1)
+        np_img = np_img.astype(np.uint8)
+
+        return np_img
     
     def predict(self, path):
         """
@@ -58,9 +69,20 @@ class ViewpointClassifier(BaseModule):
         Return:
             (numpy ndarray) img 
         """
-        dicom_handler = DicomHandler()
-        img = dicom_handler(path, out_size=(512,512), out_channels=1, percentile=99)
-        return img
+        img = sitk.GetArrayFromImage(sitk.ReadImage(path))
+        img = img[0]
+
+        img = cv2.resize(img, (512,512), interpolation=cv2.INTER_LINEAR)
+
+        np_img = img.astype(np.float32)
+        np_img -= np.min(np_img)
+        np_img /= np.percentile(np_img, 99)
+
+        np_img[np_img>1] = 1
+        np_img *= (2**8-1)
+        np_img = np_img.astype(np.uint8)
+
+        return np_img
         
     def predict(self, path):
         """

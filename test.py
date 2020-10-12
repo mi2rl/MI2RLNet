@@ -4,6 +4,8 @@ import argparse
 import os
 import sys
 
+import SimpleITK as sitk
+
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
 
@@ -15,16 +17,25 @@ def parse_arguments(argv):
 def main(args):
     ### For Preprocessing
     dcm_path = 'test.dcm'
+    # load and convert
+    img = sitk.GetArrayFromImage(sitk.ReadImage(dcm_path))
+    img = img[0]
 
-    from medimodule.preprocessing.dicom_handler import XrayHandler
-    xray_handler = XrayHandler()
-    narr = xray_handler.dicom_to_numpy(dcm_path, out_size=(512,512), out_channels=1)
-    # for keras shape
-    narr = np.expand_dims(np.expand_dims(narr, 0), -1)
+    img = cv2.resize(img, (512,512), interpolation=cv2.INTER_LINEAR)
+
+    np_img = img.astype(np.float32)
+    np_img -= np.min(np_img)
+    np_img /= np.percentile(np_img, 99)
+
+    np_img[np_img>1] = 1
+    np_img *= (2**8-1)
+    np_img = np_img.astype(np.uint8)
+
+    narr = np.expand_dims(np.expand_dims(np_img, 0), -1)
 
     ### Age Regressor Example
     if args.mode == 'age_regression':
-        from medimodule.chest import AgeRegressor
+        from medimodule.Chest import AgeRegressor
         age_regressor = AgeRegressor()
         age_regressor.init('weights/age_regression.h5')
         out = age_regressor.predict(dcm_path)
@@ -33,7 +44,7 @@ def main(args):
 
     ### Viewpoint Classifier Example (PA / Lateral / Others)
     elif args.mode == 'viewpoint_classification':
-        from medimodule.chest import ViewpointClassifier
+        from medimodule.Chest import ViewpointClassifier
         view_classifier = ViewClassifier()
         view_classifier.init('weights/viewpoint_classification.h5')
         out = view_classifier.predict(dcm_path)
@@ -41,7 +52,7 @@ def main(args):
 
     ### Enhance Classifier Example (Non-Enhanced / Enhanced)
     elif args.mode == 'classification_enhance':
-        from medimodule.chest import EnhanceCTClassifier
+        from medimodule.Chest import EnhanceCTClassifier
         enhanceCT_classifier = EnhanceCTClassifier()
         enhanceCT_classifier.init('weights/enhance_classification.h5')
         out = enhaceCT_classifier.predict(dcm_path)
