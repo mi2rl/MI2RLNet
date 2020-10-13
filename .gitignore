@@ -1,3 +1,7 @@
 __pycache__/
 *.ipynb
 
+*.h5
+*.dcm
+
+*.pyc
