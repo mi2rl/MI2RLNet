@@ -12,7 +12,9 @@ def parse_arguments(argv):
     parser.add_argument('--mode', type=str, default=None)
     parser.add_argument('--img', type=str, default=None)
     parser.add_argument('--weights', type=str, default=None)
-
+    parser.add_argument('--gpu_num', type=str, default='2')
+    parser.add_argument('--threshold', type=int, default=0.75)
+    parser.add_argument('--save_path', type=str, default=None)
     return parser.parse_args()
 
 
@@ -45,8 +47,15 @@ def main(args):
         enhanceCT_classifier.init(args.weights)
         out = enhanceCT_classifier.predict(dcm_path)
         print(out)
-
+    ### Example LR Detection (L / R)
+    elif args.mode == 'lr_detection':
+        from medimodule.Chest import ChestLRDetection
+        detection = ChestLRDetection()
+        detection.init(args.weights,args.gpu_num,args.threshold)
+        predict = detection.predict(args.img,args.threshold)
+        cv2.imwrite(args.save_path + 'output.png' ,predict)
 
 if __name__ == '__main__':
    argv = parse_arguments(sys.argv[1:])
    main(argv)
+    
