@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 from medimodule.base import BaseModule
-from medimodule.polyp.polyp_segmentation.load_model import build_polyp_segmentation
+from medimodule.Polyp.polyp_segmentation.load_model import build_polyp_segmentation
 
 
 class PolypSegmentation(BaseModule):
