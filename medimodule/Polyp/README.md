@@ -3,12 +3,12 @@
 ## Polyp Segmentation
 ### Running
 ```python
-from medimodule.polyp.module import PolypSegmentation
+from medimodule.polyp import PolypSegmentation
 
 module = PolypSegmentation()
 
 # set the model with weight
-module.init('/home/jypark/UNet/medimodule/polyp/polyp_segmentation/weight.pth')
+module.init('weight.pth')
 
 # get a liver mask of the image
 mask = module.predict('/path/of/polyp.png')
@@ -18,4 +18,4 @@ mask = module.predict('/path/of/polyp.png')
 
 ### Model evaluation
 UNet Scored 0.7 Mean DSC score 
-  
+
