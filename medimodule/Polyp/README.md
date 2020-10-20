@@ -3,7 +3,7 @@
 ## Polyp Segmentation
 ### Running
 ```python
-from medimodule.polyp import PolypSegmentation
+from medimodule.Polyp import PolypSegmentation
 
 module = PolypSegmentation()
 
