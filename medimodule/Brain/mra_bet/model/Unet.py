@@ -20,7 +20,7 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
-class sudo (nn.Module):
+class Down(nn.Module):
     def __init__(self, in_channels,out_channels):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
