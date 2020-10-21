@@ -20,13 +20,8 @@ module = ChestLRDetection()
 
 # set the model with weight
 module.init(model_path)
-
-
 # get a Prediction image
 predict = module.predict(img_path)
-
-# if you run test.py, just run.
-python test.py --mode lr_detection --img sample.png --weights sample.h5 --save_path sample_dir/
 
 ```
 ![image](https://user-images.githubusercontent.com/46750574/95935344-f7d18800-0e0d-11eb-8ccf-3bcf075d82d6.png)
@@ -36,8 +31,6 @@ python test.py --mode lr_detection --img sample.png --weights sample.h5 --save_p
 
 ### Reference
 
-[EfficientDet]
-[code](https://github.com/xuannianz/EfficientDet)
-[paper](https://arxiv.org/pdf/1911.09070.pdf)
+[EfficientDet] [Code](https://github.com/xuannianz/EfficientDet) [Paper](https://arxiv.org/pdf/1911.09070.pdf)
 
 
