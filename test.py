@@ -45,6 +45,12 @@ def main(args):
         enhanceCT_classifier.init(args.weights)
         out = enhanceCT_classifier.predict(dcm_path)
         print(out)
+    elif args.mode == 'polyp_segmentation':
+        from medimodule.Polyp import PolypSegmentation
+        polyp_seg = PolypSegmentation()
+        polyp_seg.init(args.weights)
+        out = polyp_seg.predict(dcm_path)
+        print(np.unique(out))
     ### Example LR Detection (L / R)
     elif args.mode == 'lr_detection':
         from medimodule.Chest import ChestLRDetection
