@@ -7,7 +7,6 @@ import numpy as np
 import cv2
 import scipy.ndimage as ndimage
 import torch
-import gc
 
 class MRA_BET(BaseModule):
     def init(self, weight_path, gpu_num):
@@ -103,7 +102,6 @@ class MRA_BET(BaseModule):
             mask3d[:,:,z] = 1*(np.squeeze(output) >= thres)
         
         mask3d = self._postprocessing(mask3d)
-        gc.collect()
         
         return mask3d
     
