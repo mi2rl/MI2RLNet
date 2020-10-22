@@ -20,55 +20,12 @@ def main(args):
     ### For Preprocessing
     dcm_path = os.path.abspath(args.img)
 
-    
-    ### Age Regressor Example
-    if args.mode == 'age_regression':
-        from medimodule.Chest import AgeRegressor
-        age_regressor = AgeRegressor()
-        age_regressor.init(args.weights)
-        out = age_regressor.predict(dcm_path)
-        print(out)
-
-
-    ### Viewpoint Classifier Example (PA / Lateral / Others)
-    elif args.mode == 'viewpoint_classification':
-        from medimodule.Chest import ViewpointClassifier
-        view_classifier = ViewpointClassifier()
-        view_classifier.init(args.weights)
-        out = view_classifier.predict(dcm_path)
-        print(out)
-
-    ### Enhance Classifier Example (Non-Enhanced / Enhanced)
-    elif args.mode == 'enhance_classification':
-        from medimodule.Chest import EnhanceCTClassifier
-        enhanceCT_classifier = EnhanceCTClassifier()
-        enhanceCT_classifier.init(args.weights)
-        out = enhanceCT_classifier.predict(dcm_path)
-        print(out)
-
-    elif args.mode == 'polyp_segmentation':
+    if args.mode == 'polyp_segmentation':
         from medimodule.Polyp import PolypSegmentation
         polyp_seg = PolypSegmentation()
         polyp_seg.init(args.weights)
         out = polyp_seg.predict(dcm_path)
         print(np.unique(out))
-    ### Example LR Detection (L / R)
-    elif args.mode == 'lr_detection':
-        from medimodule.Chest import ChestLRDetection
-        detection = ChestLRDetection()
-        detection.init(args.weights)
-        predict = detection.predict(args.img)
-        cv2.imwrite(args.save_path + 'output.png' ,predict)
-        print("Predict Done")
-        print("="*30)
-
-    ### MRA_BET Example 
-    elif args.mode == 'mra_bet':
-        from medimodule.Brain import MRA_BET
-        mra_bet = MRA_BET()
-        mra_bet.init(args.weights, gpu_num=3)
-        out = mra_bet.predict(dcm_path)
-        print(out)
 
 if __name__ == '__main__':
    argv = parse_arguments(sys.argv[1:])
