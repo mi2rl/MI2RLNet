@@ -3,7 +3,7 @@ from functools import reduce
 from tensorflow.keras import layers as keras_layers
 from tensorflow.keras import initializers
 from tensorflow.keras import models
-from .anchors import anchors_for_shape
+from ..utils.anchors import anchors_for_shape
 import numpy as np
 import tensorflow as tf
 from . import *
