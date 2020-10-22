@@ -52,16 +52,15 @@ def main(args):
         out = polyp_seg.predict(dcm_path)
         print(np.unique(out))
     ### Example LR Detection (L / R)
+
     elif args.mode == 'lr_detection':
         from medimodule.Chest import ChestLRDetection
         detection = ChestLRDetection()
         detection.init(args.weights)
         predict = detection.predict(args.img)
-        cv2.imwrite(args.save_path + 'output.png' ,predict)
-        print("Predict Done")
-        print("="*30)
+
+        cv2.imwrite(args.save_path + 'output.png', predict)
 
 if __name__ == '__main__':
    argv = parse_arguments(sys.argv[1:])
    main(argv)
-    
