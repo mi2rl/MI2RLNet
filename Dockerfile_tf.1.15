@@ -1,0 +1,15 @@
+FROM mi2rl/tf.1.15.0:1.15.0_201015
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update
+RUN apt-get install -y libsm6 libxext6 libxrender-dev libglib2.0-0
+RUN apt-get install -y sudo vim
+RUN addgroup --gid 'our_gid' gusers
+RUN adduser --uid 'your_uid' --gid 'our_gid' --disabled-password --gecos '' 'your_name'
+RUN adduser 'your_name' sudo
+RUN pip install opencv-python
+RUN pip install pydicom
+RUN pip install nibabel
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER 'your_name'
+

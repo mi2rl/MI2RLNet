@@ -10,7 +10,6 @@ from .age_regression.load_model import build_age_regressor
 from .viewpoint_classification.load_model import build_view_classifier
 from .enhance_classification.load_model import build_enhanceCT_classifier
 
-
 class AgeRegressor(BaseModule):
     def init(self, weight_path):
         self.model = build_age_regressor(weight_path)
@@ -173,5 +172,123 @@ class EnhanceCTClassifier(BaseModule):
         labels = ['Non-Enhanced', 'Enhanced']
         return labels[out]
 
+from .lr_detection.load_model import build_lr_detection
+from .lr_detection.anchors import anchors_for_shape
+from .lr_detection.post_process_boxes import post_process_boxes
+
+class ChestLRDetection(BaseModule):
+    def init(self, weight_path):
+        """
+        Initialize the model with its weight.
+        
+        Args:
+            (string) weight_path : model's weight path
+        """
+
+        self.model = build_lr_detection(weight_path)
+        
+    def _preprocessing(self, path):
+        """
+        Preprocess the image from the path
+            - png : mean/SD scaling
+        Args:
+            (string) path : absolute path of image
+        Return:
+            (numpy ndarray) new_image : scaled image
+            (numpy ndarray) src_image : origin_image
+            (float) scale, offset_h, offset_w , image_size , h,w : scaled image informations
+        """
+        
+        '''
+        Post Processing about predict bounding box
+        
+            - scaling Bounding Box using offset
+            
+        '''
+        
+        if '.png' in path or '.jpg' in path or '.bmp' in path:
+            
+            image = cv2.imread(path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            src_image = image.copy()
+            image = image[:, :, ::-1]
+            h, w = image.shape[:2]
+            
+            image_height, image_width = image.shape[:2]
+            image_size = 512 # b0 baseline
+            
+            if image_height > image_width:
+                scale = image_size / image_height
+                resized_height = image_size
+                resized_width = int(image_width * scale)
+            else:
+                scale = image_size / image_width
+                resized_height = int(image_height * scale)
+                resized_width = image_size
+
+            image = cv2.resize(image, (resized_width, resized_height))
+            new_image = np.ones((image_size, image_size, 3), dtype=np.float32) * 128.
+            offset_h = (image_size - resized_height) // 2
+            offset_w = (image_size - resized_width) // 2
+            new_image[offset_h:offset_h + resized_height, offset_w:offset_w + resized_width] = image.astype(np.float32)
+            new_image /= 255.
+
+            mean = [0.485, 0.456, 0.406]
+            std = [0.229, 0.224, 0.225]
+            
+            for i in range(3):
+                new_image[..., i] -= mean[i]
+                new_image[..., i] /= std[i]
+        
+        return new_image, scale, offset_h, offset_w , image_size , src_image, h,w
+
+    def predict(self, path):
+        """
+        L,R Detection 
+        Args:
+            (string) path : 8-bit png path
+            
+        Return:
+            (numpy ndarray) L,R detection image (W,H,C)
+        """
+        classes = ['left','right']
+        num_classes = len(classes)
+        score_threshold = 0.85
+        image, scale, offset_h, offset_w ,image_size ,src_image,h,w= self._preprocessing(path)
+        
+        anchors = anchors_for_shape((image_size, image_size))
+        predict = np.zeros((3,6),dtype=np.float32)
+
+        boxes, scores, labels = self.model.predict([np.expand_dims(image, axis=0),
+                                                                   np.expand_dims(anchors, axis=0)])
+        
+        boxes, scores, labels = np.squeeze(boxes), np.squeeze(scores), np.squeeze(labels)
+        boxes = post_process_boxes(boxes=boxes,
+                               scale=scale,
+                               offset_h=offset_h,
+                               offset_w=offset_w,
+                               height=h,
+                               width=w)
+    
+        indices = np.where(scores[:] > score_threshold)[0]
+        boxes = boxes[indices]
+        labels = labels[indices]
+        
+        for b, l, s in zip(boxes, labels, scores):
+            class_id = int(l)
+            class_name = classes[class_id]
+
+            xmin, ymin, xmax, ymax = list(map(int, b))
+            score = '{:.4f}'.format(s)
+            color = [0,0,255]
+            label = '-'.join([class_name, score])
+
+            ret, baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+            cv2.rectangle(src_image, (xmin, ymin), (xmax, ymax), color, 3)
+            cv2.rectangle(src_image, (xmin, ymax - ret[1] - baseline), (xmin + ret[0], ymax), color, -1)
+            cv2.putText(src_image, label, (xmin, ymax - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+
+        return (src_image)
 
 
