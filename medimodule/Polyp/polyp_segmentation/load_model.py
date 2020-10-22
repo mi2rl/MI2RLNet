@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from .model.UNet import UNet
+from .models.UNet import UNet
     
 def build_polyp_segmentation(weight_path = './weight.pth'):
     model = UNet()

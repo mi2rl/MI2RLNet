@@ -7,7 +7,7 @@ from skimage import transform, io, img_as_float
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 
-from postprocessing import _postprocessing
+from medimodule.Lung.lung_segmentation.postprocessing import _postprocessing
 from medimodule.base import BaseModule
 
 class LungSegmentation(BaseModule):

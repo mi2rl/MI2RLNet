@@ -27,7 +27,7 @@ from tensorflow.keras.models import Model
 convolution layers
 '''
 
-def build_brain_segmentation(
+def build_blackblood_segmentation(
     weight_path: str,
     base_filter = 32,
     noise = 0.1,

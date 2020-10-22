@@ -1,4 +1,5 @@
 import os
+import sys
 import SimpleITK as sitk
 import numpy as np
 import glob, os
@@ -7,20 +8,16 @@ import cv2
 import scipy.ndimage as ndimage
 import torch
 
-## temp ##
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
 from base import BaseModule
-from preprocessing import Preprocessing
-from load_model import build_brain_segmentation
+
+from medimodule.Brain.blackblood_segmentation.preprocessing import Preprocessing
+from medimodule.Brain.blackblood_segmentation.load_model import build_blackblood_segmentation
 
 from medimodule.base import BaseModule
 from medimodule.Brain.mra_bet.load_model import build_MRA_BET
-# from medimodule.Brain.brain_segmentation.preprocessing import Preprocessing
 
 
-class BrainSegmentation(BaseModule):
+class BlackbloodSegmentation(BaseModule):
     def init(self, weight_path):
         """
         Initialize the model with its weight.
@@ -73,9 +70,6 @@ class BrainSegmentation(BaseModule):
         if istogether:
             return (np.sqqueeze(img), mask)
         return mask
-
-
-
 
 
 class MRA_BET(BaseModule):
