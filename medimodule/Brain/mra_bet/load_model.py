@@ -3,11 +3,11 @@ import os
 
 from .models.Unet import UNet
 
-def build_MRA_BET(weight_path, gpu_num):
+def build_MRA_BET(weight_path):
     model = UNet().cuda()
-    weight = torch.load(weight_path)#, map_location='cpu')
+    weight = torch.load(weight_path)
     model.load_state_dict(weight['net'])
     
-    return model, device
+    return model
 
     
