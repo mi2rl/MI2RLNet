@@ -4,8 +4,8 @@ import cv2
 import os
 import sys
 import SimpleITK as sitk
-
-from ..base import BaseModule
+sys.path.append("../")
+from base import BaseModule
 from .age_regression.load_model import build_age_regressor
 from .viewpoint_classification.load_model import build_view_classifier
 from .enhance_classification.load_model import build_enhanceCT_classifier
@@ -173,8 +173,8 @@ class EnhanceCTClassifier(BaseModule):
         return labels[out]
 
 from .lr_detection.load_model import build_lr_detection
-from .lr_detection.anchors import anchors_for_shape
-from .lr_detection.post_process_boxes import post_process_boxes
+from .lr_detection.utils.anchors import anchors_for_shape
+from .lr_detection.utils.post_process_boxes import post_process_boxes
 
 class ChestLRDetection(BaseModule):
     def init(self, weight_path):
