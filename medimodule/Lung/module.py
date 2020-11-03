@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from skimage import transform, io, img_as_float32
 
+
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 
@@ -22,7 +23,7 @@ class LungSegmentation(BaseModule):
         
         self.model = load_model(weight_path)
 
-   
+
     def _preprocessing(self, ImgPath):
         """
         Preprocess the image from the path
@@ -71,6 +72,7 @@ class LungSegmentation(BaseModule):
         print("Preprocessing done on {} files.....".format(len(FileNames)))
         return Imgs, FileNames
     
+
     
     def predict(self, ImgPath):
         """
