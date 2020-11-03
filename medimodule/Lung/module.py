@@ -8,8 +8,8 @@ from skimage import transform, io, img_as_float32
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 
-from postprocessing import _postprocessing
-from medimodule.base import BaseModule
+from base import BaseModule
+from .lung_segmentation.utils.postprocessing import _postprocessing
 
 class LungSegmentation(BaseModule):
 
