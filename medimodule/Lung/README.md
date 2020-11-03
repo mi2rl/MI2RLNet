@@ -24,7 +24,7 @@ module.init('/path/for/lung/Lung_segmentation.hdf5')
 # get a result
 result = module.predict('/path/of/lung/file')
 ```
-<center>![sample](https://user-images.githubusercontent.com/55068090/97973121-f1c93880-1e08-11eb-8689-7c93f90b4b96.png)</center>
+![sample](https://user-images.githubusercontent.com/55068090/97973121-f1c93880-1e08-11eb-8689-7c93f90b4b96.png)
 
 ### Weights
 
