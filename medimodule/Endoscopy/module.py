@@ -1,10 +1,12 @@
 import cv2
 import torch
 import numpy as np
+import sys
+sys.path.append('../')
 
-from medimodule.base import BaseModule
-from medimodule.Polyp.polyp_segmentation.load_model import build_polyp_segmentation
-
+from base import BaseModule
+from Endoscopy.polyp_segmentation.load_model import build_polyp_segmentation
+from utils import Checker
 
 class PolypSegmentation(BaseModule):
     def init(self, weight_path):
@@ -29,7 +31,7 @@ class PolypSegmentation(BaseModule):
         '''
         TODO : ?
         '''
-
+        Checker.check_input_type(path, 'png')
         image = cv2.imread(path)
         image = cv2.resize(image, dsize=(512, 512))
         image = image/255.0

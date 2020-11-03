@@ -46,16 +46,16 @@ def main(args):
         out = enhanceCT_classifier.predict(dcm_path)
         print(out)
 
-    ### LR Detection
+    ### Example LR Detection (L / R)
     elif args.mode == 'lr_detection':
-        from medimodule.Chest import ChestLRDetection
+        sys.path.append("../")
+        from Chest import ChestLRDetection
         detection = ChestLRDetection()
         detection.init(args.weights)
         predict = detection.predict(args.img)
-        cv2.imwrtie(args.save_path + 'output.png', predict)
 
+        cv2.imwrite(args.save_path + 'output.png', predict)
 
 if __name__ == '__main__':
    argv = parse_arguments(sys.argv[1:])
    main(argv)
-    
