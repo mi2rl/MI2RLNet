@@ -7,14 +7,13 @@ import nibabel as nib
 import cv2
 import scipy.ndimage as ndimage
 import torch
+# sys.path.append("../")
+
+# from blackblood_segmentation.preprocessing import Preprocessing
+# from blackblood_segmentation.load_model import build_blackblood_segmentation
 
 from base import BaseModule
-
-from medimodule.Brain.blackblood_segmentation.preprocessing import Preprocessing
-from medimodule.Brain.blackblood_segmentation.load_model import build_blackblood_segmentation
-
-from medimodule.base import BaseModule
-from medimodule.Brain.mra_bet.load_model import build_MRA_BET
+from Brain.mra_bet.load_model import build_MRA_BET
 
 
 class BlackbloodSegmentation(BaseModule):
@@ -73,16 +72,14 @@ class BlackbloodSegmentation(BaseModule):
 
 
 class MRA_BET(BaseModule):
-    def init(self, weight_path, gpu_num):
+    def init(self, weight_path):
         """
         Initialize the model with its weight.
         
         Args:
             (string) weight_path : model's weight path
-            (scalar) gpu_num : select GPU number
         """
-
-        self.net, self.device = build_MRA_BET(weight_path, gpu_num)
+        self.net = build_MRA_BET(weight_path)
 
         
     def _preprocessing(self, path, min_percent=40, max_percent=98.5, out_min=0, out_max=1):
@@ -99,7 +96,8 @@ class MRA_BET(BaseModule):
             (numpy ndarray) data with shape (1, h, w, d, 1)
         """ 
 
-        data = nib.load(path).get_fdata().astype(np.float32)
+        read_data = nib.load(path)
+        data = read_data.get_fdata().astype(np.float32)
 
         # normalizing
         w_min = np.percentile(data, min_percent)
@@ -112,8 +110,8 @@ class MRA_BET(BaseModule):
                 
         # ToTensor, unsqueezing
         data = torch.from_numpy(data)[np.newaxis,np.newaxis,...]
-        data = data.to(self.device, dtype=torch.float32)
-        return data
+        data = data.cuda()
+        return data, read_data
 
     
     def _postprocessing(self, data):
@@ -144,18 +142,19 @@ class MRA_BET(BaseModule):
         
         return data
     
-    def predict(self, path, thres=0.5):
+    def predict(self, path, save_path=None, thres=0.5):
         """
         Brain tissue segmentation
 
         Args:
             (string) path : absolute path of data
+            (string) save_path : absolute path for saving data
             (float) thres : probability threshold to make a mask pixel white (default : 0.5)
         Return:
             (numpy ndarray) 3d brain tissue mask 
         """ 
 
-        data = self._preprocessing(path)
+        data, read_data = self._preprocessing(path)
         
         self.net.eval()
         mask3d = np.zeros(np.squeeze(data).shape)
@@ -167,5 +166,10 @@ class MRA_BET(BaseModule):
         
         mask3d = self._postprocessing(mask3d)
         
+        if save_path:
+            save_name = path.split("/")[-1].replace(".nii","_mask.nii")
+            save_ = nib.Nifti1Image(mask3d, read_data.affine, read_data.header)
+            nib.save(save_, os.path.join(save_path, save_name))
+
         return mask3d
     
