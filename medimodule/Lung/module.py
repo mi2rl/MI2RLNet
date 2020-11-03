@@ -22,7 +22,7 @@ class LungSegmentation(BaseModule):
         
         self.model = load_model(weight_path)
 
-
+   
     def _preprocessing(self, ImgPath):
         """
         Preprocess the image from the path
@@ -41,6 +41,9 @@ class LungSegmentation(BaseModule):
         Imgs = []
         FileNames = []
 
+        Imgs_mean = 0.
+        Imgs_meansq = 0.
+
         for i, filename in enumerate(os.listdir(ImgPath)):
 
             if (os.path.isdir(os.path.join(ImgPath, filename))):
@@ -52,13 +55,22 @@ class LungSegmentation(BaseModule):
             Imgs.append(img)
             FileNames.append(filename)
 
+            Imgs_mean += img.mean()
+            Imgs_meansq += (img**2).mean()
+
         Imgs = np.array(Imgs)
         FileNames = np.array(FileNames)
-        Imgs -= Imgs.mean()
-        Imgs /= Imgs.std()
 
-        return Imgs, FileNames    
+        Imgs_mean /= len(FileNames)
+        Imgs_meansq /= len(FileNames)
+        Imgs_std  = np.sqrt(Imgs_meansq - Imgs_mean**2)
 
+        Imgs -= Imgs_mean
+        Imgs /= Imgs_std
+
+        print("Preprocessing done on {} files.....".format(len(FileNames)))
+        return Imgs, FileNames
+    
     
     def predict(self, ImgPath):
         """
