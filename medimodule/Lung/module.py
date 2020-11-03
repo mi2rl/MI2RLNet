@@ -2,7 +2,7 @@ import os
 import gc
 import cv2
 import numpy as np
-from skimage import transform, io, img_as_float
+from skimage import transform, io, img_as_float32
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
