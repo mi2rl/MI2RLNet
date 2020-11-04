@@ -2,6 +2,7 @@
 This **Brain** module consists of the following functions.
 -  MRA BET(MR angiography brain extraction tool)
 -  Brain Blackblood segmentation
+
 - (TODO) Brain Aneurysm Segmentation
 
 ### Results
@@ -63,6 +64,7 @@ mask = module.predict('/path/of/brain_seg.png')
 
 ### Model evaluation
 UNet Scored 0.808 score 
+
 
 &#160;  
 ## Brain Aneurysm Segmentation
