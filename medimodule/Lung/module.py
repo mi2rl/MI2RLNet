@@ -2,13 +2,14 @@ import os
 import gc
 import cv2
 import numpy as np
-from skimage import transform, io, img_as_float
+from skimage import transform, io, img_as_float32
+
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 
-from medimodule.Lung.lung_segmentation.postprocessing import _postprocessing
-from medimodule.base import BaseModule
+from base import BaseModule
+from .lung_segmentation.utils.postprocessing import _postprocessing
 
 class LungSegmentation(BaseModule):
 
@@ -41,6 +42,9 @@ class LungSegmentation(BaseModule):
         Imgs = []
         FileNames = []
 
+        Imgs_mean = 0.
+        Imgs_meansq = 0.
+
         for i, filename in enumerate(os.listdir(ImgPath)):
 
             if (os.path.isdir(os.path.join(ImgPath, filename))):
@@ -52,12 +56,22 @@ class LungSegmentation(BaseModule):
             Imgs.append(img)
             FileNames.append(filename)
 
+            Imgs_mean += img.mean()
+            Imgs_meansq += (img**2).mean()
+
         Imgs = np.array(Imgs)
         FileNames = np.array(FileNames)
-        Imgs -= Imgs.mean()
-        Imgs /= Imgs.std()
 
-        return Imgs, FileNames    
+        Imgs_mean /= len(FileNames)
+        Imgs_meansq /= len(FileNames)
+        Imgs_std  = np.sqrt(Imgs_meansq - Imgs_mean**2)
+
+        Imgs -= Imgs_mean
+        Imgs /= Imgs_std
+
+        print("Preprocessing done on {} files.....".format(len(FileNames)))
+        return Imgs, FileNames
+    
 
     
     def predict(self, ImgPath):
