@@ -14,7 +14,7 @@ module.init('weight.pth')
 mask = module.predict('/path/of/polyp.png')
 ```
 ### Sample
-<img src="imgs/just_pic.png" width="100%"></img>
+<img src="./imgs/just_pic.png" width="100%"></img>
 
 ### Model evaluation
 UNet Scored 0.7 Mean DSC score 
