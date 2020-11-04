@@ -1,9 +1,6 @@
-from keras.applications import densenet
-from keras.models import Sequential, Model, load_model
-from keras.layers import *
-from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, Callback
-from keras import regularizers
-from keras import backend as K
+from tensorflow.keras.applications import densenet
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import *
 
 def build_age_regressor(weight_path):
     img_width, img_height = 512, 512
