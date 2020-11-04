@@ -103,10 +103,10 @@ def main():
 
     if args.mode == '1':
         ''' coreline '''
-        from cascade_1st.Model_ACE_CNet import load_model
-        from cascade_1st.run_eval_cascaded import TransAxis, resample_img_asdim, normalize_vol, CCL_check_1ststg, CCL_1ststg_post
+        from .load_model import ACE_CNet_1st
+        from .models.cascade_1st.run_eval_cascaded import TransAxis, resample_img_asdim, normalize_vol, CCL_check_1ststg, CCL_1ststg_post
 
-        model = load_model(
+        model = ACE_CNet_1st(
             input_shape=(None, None, None, 1), 
             num_labels=1, 
             base_filter=32,
@@ -297,10 +297,10 @@ def main():
     else:
         if args.mode == '2_1':
             ''' coreline '''
-            from cascade_2nd.model_1.Model_ACE_CNet_2ndstg import load_model
-            from cascade_1st.run_eval_cascaded import TransAxis, resample_img_asdim, normalize_vol, CCL
+            from .load_model import ACE_CNet_2nd
+            from .models.cascade_1st.run_eval_cascaded import TransAxis, resample_img_asdim, normalize_vol, CCL
 
-            model = load_model(
+            model = ACE_CNet_2nd(
                 input_shape=(None, None, None, 1), 
                 num_labels=3, 
                 base_filter=32,
@@ -480,8 +480,8 @@ def main():
             
         else:
             ''' mi2rl '''
-            from cascade_2nd.model_2_5.model import MyModel
-            from cascade_2nd.model_2_5.load_data import Preprocessing
+            from .models.cascade_2nd.model_2_5.model import MyModel
+            from .models.cascade_2nd.model_2_5.load_data import Preprocessing
 
             model = MyModel(
                 model=args.mode,
