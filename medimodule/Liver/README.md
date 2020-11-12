@@ -28,7 +28,7 @@ module.init('/path/for/liver/segmentation.h5')
 # get a liver mask of the image
 mask = module.predict('/path/of/liver.hdr')
 ```
-<img src="img/liver_segmentation.png" width="100%"></img>
+<img src="imgs/liver_segmentation.png" width="100%"></img>
 
 ### Weights
 - TODO
