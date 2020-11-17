@@ -13,6 +13,10 @@ from scipy.ndimage import zoom
 from base import BaseModule
 from Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
 
+from base import BaseModule
+from Brain.mra_bet.load_model import build_MRA_BET
+
+
 class BlackbloodSegmentation(BaseModule):
     def init(self, weight_path):
         """
@@ -24,6 +28,7 @@ class BlackbloodSegmentation(BaseModule):
         self.model = build_blackblood_segmentation(weight_path)
 
 
+
     def _preprocessing(self, path):
 
         """
@@ -33,6 +38,7 @@ class BlackbloodSegmentation(BaseModule):
         Return:
             (numpy ndarray) image
         """
+
         windowing_range = [-40., 120.]
 
         windowing_min = windowing_range[0] - windowing_range[1] // 2
@@ -75,6 +81,7 @@ class BlackbloodSegmentation(BaseModule):
         # loaded_model = tf.keras.models.load_model(weight_path)
 
         # model.load_model(weight_path)
+
         return mask
 
 
@@ -91,6 +98,7 @@ class MRA_BET(BaseModule):
     def _preprocessing(self, path, min_percent=40, max_percent=98.5, out_min=0, out_max=1):
         """
         Preprocess the image from the path
+
         Args:
             (string) path : absolute path of data
             (float) min_percent : Min percentile to compute, which must be between 0 and 100 inclusive (default : 40)
@@ -99,6 +107,7 @@ class MRA_BET(BaseModule):
             (integer) out_max : maximum value of output (default : 1)
         Return:
             (numpy ndarray) data with shape (1, h, w, d, 1)
+
         """
 
         read_data = nib.load(path)
@@ -109,6 +118,7 @@ class MRA_BET(BaseModule):
         w_max = np.percentile(data, max_percent)
         width = w_max - w_min + 1
         center = w_min + width / 2
+
         data = ((data - center) / width + 0.5) * (out_max - out_min)
         data = np.piecewise(data, [data <= out_min, data >= out_max],
                             [out_min, out_max, lambda data: data])
@@ -121,6 +131,7 @@ class MRA_BET(BaseModule):
     def _postprocessing(self, data):
         """
         Postprocess the predicted data to reduce FP:wq
+
         Args:
             (numpy ndarray) 3d data with shape (h, w, d)
         Return:
@@ -135,10 +146,12 @@ class MRA_BET(BaseModule):
         # FP reduction using ccl
         img_labels, num_labels = ndimage.label(data)
         sizes = ndimage.sum(data, img_labels, range(num_labels + 1))
+
         remove_cluster = sizes < np.max(sizes)
         remove_pixel = remove_cluster[img_labels]
         data[remove_pixel] = 0
         data[data > 0] = 1
+
 
         # fill hole
         data = ndimage.binary_fill_holes(data).astype(np.float32)
@@ -148,6 +161,7 @@ class MRA_BET(BaseModule):
     def predict(self, path, save_path=None, thres=0.5):
         """
         Brain tissue segmentation
+
         Args:
             (string) path : absolute path of data
             (string) save_path : absolute path for saving data
@@ -170,6 +184,7 @@ class MRA_BET(BaseModule):
 
         if save_path:
             save_name = path.split("/")[-1].replace(".nii", "_mask.nii")
+
             save_ = nib.Nifti1Image(mask3d, read_data.affine, read_data.header)
             nib.save(save_, os.path.join(save_path, save_name))
 

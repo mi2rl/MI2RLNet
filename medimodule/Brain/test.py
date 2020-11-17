@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 sys.path.append("../")
+
 import numpy as np
 import cv2
 import SimpleITK as sitk
@@ -16,6 +17,7 @@ import warnings
 
 warnings.filterwarnings('ignore', '.*output shape of zoom.*')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
@@ -27,10 +29,12 @@ def parse_arguments(argv):
     parser.add_argument('--gpu', type=str, default=None)
     return parser.parse_args()
 
+
 def main(args):
     ### For Preprocessing
     dcm_path = os.path.abspath(args.img)
     check = Checker()
+
     ### MRA_BET Example
     if args.mode == 'mra_bet':
         from Brain.module import MRA_BET
@@ -56,3 +60,5 @@ def main(args):
 if __name__ == '__main__':
    argv = parse_arguments(sys.argv[1:])
    main(argv)
+
+
