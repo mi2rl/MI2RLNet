@@ -64,7 +64,7 @@ check.check_input_type('path/of/img.nii', 'nii')
 # set the model with weight
 module.init('/path/for/segmentation.h5')
 
-# get a liver mask of the image
+# get a blackblood mask of the image
 mask = module.predict('/path/of/seg_result.hdr')
 ```
 
