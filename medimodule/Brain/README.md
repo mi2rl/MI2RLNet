@@ -1,12 +1,15 @@
 # Brain
 This **Brain** module consists of the following functions.
 -  MRA BET(MR angiography brain extraction tool)
+-  Brain Blackblood segmentation
+
 - (TODO) Brain Aneurysm Segmentation
 
 ### Results
 | Modality | Part | Module | Results |
 | --- | --- | --- | --- |
 | MRA | Brain | MRA BET | - |
+| blackblood | Brain | Brain blackblood Segmentation | - |
 | MRA | Brain | Brain Aneurysm Segmentation | - |
 
 &#160; 
@@ -43,6 +46,24 @@ mask = mra_bet.predict('path/of/img.nii', 'save_path')
 ### Reference
 - [UNet] - [code](https://github.com/milesial/Pytorch-UNet)
 
+
+## Blackblood Segmentation
+### Inference
+```python
+from Brain.module import BlackbloodSegmentation
+module = BlackbloodSegmentation()
+# set the model with weight
+module.init('weight.pth')
+
+# get a liver mask of the image
+mask = module.predict('/path/of/brain_seg.png')
+```
+
+### Sample
+- To-do
+
+### Model evaluation
+UNet Scored 0.808 score 
 
 
 &#160;  

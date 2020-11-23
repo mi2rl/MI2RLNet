@@ -7,10 +7,11 @@ import nibabel as nib
 import cv2
 import scipy.ndimage as ndimage
 import torch
-# sys.path.append("../")
 
-# from blackblood_segmentation.preprocessing import Preprocessing
-# from blackblood_segmentation.load_model import build_blackblood_segmentation
+from scipy.ndimage import zoom
+
+from base import BaseModule
+from Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
 
 from base import BaseModule
 from Brain.mra_bet.load_model import build_MRA_BET
@@ -24,7 +25,8 @@ class BlackbloodSegmentation(BaseModule):
         Args:
             (string) weight_path : model's weight path
         """
-        self.model = build_brain_segmentation(weight_path)
+        self.model = build_blackblood_segmentation(weight_path)
+
 
 
     def _preprocessing(self, path):
@@ -37,37 +39,49 @@ class BlackbloodSegmentation(BaseModule):
             (numpy ndarray) image
         """
 
-        '''
-        TODO : check image format
-            - hdr : ?
-            - nii : pass
-            - dcm : ?
-        '''
+        windowing_range = [-40., 120.]
 
-        prep = Preprocessing(args,
-                             rotation_range=[0., 0., 0.],
-                             voi_dict=None)
+        windowing_min = windowing_range[0] - windowing_range[1] // 2
+        windowing_max = windowing_range[0] + windowing_range[1] // 2
+        image = sitk.ReadImage(path)
+        space = image.GetSpacing()
+        image = sitk.GetArrayFromImage(image).astype('float32')
 
-        cases = [c for c in os.listdir(path) if 'T1.nii' in c]
-        cases = sorted([c.split('.')[0][:-3] for c in cases])
+        self.img_shape = image.shape
+        d, w, h = self.img_shape
 
-        for data in cases:
-            img_num = data[:20]
-            img_noise = data[-3:]
-            img = sitk.ReadImage(os.path.join(path, img_num + '_T1_{}.nii'.format(img_noise)))
+        image = ndimage.zoom(image, [.5, .5, .5], order=1, mode='constant', cval=0.)
 
-            img = prep._windowing(img)
-            img = prep._standardize(img)
-            img = img[np.newaxis, ..., np.newaxis]
+        image = np.clip(image, windowing_min, windowing_max)
+        image = (image - windowing_min) / (windowing_max - windowing_min)
+        image = image[np.newaxis, ..., np.newaxis]       # (1, d, w, h, 1)
+        return image
 
-            yield img
-        return img
 
     def predict(self, path, istogether=False):
+        """
+        blackblood segmentation
+        (string) path : image path (nii)
+        (bool) istogether : with image which was used or not
+
+        """
+        path = os.path.abspath(path)
         img = self._preprocessing(path)
+
         mask = np.squeeze(self.model(img).numpy().argmax(axis=-1))
+        mask_shape = mask.shape
+        mask = zoom(mask, [self.img_shape[0]/mask_shape[0],
+                           self.img_shape[1]/mask_shape[1],
+                           self.img_shape[2]/mask_shape[2]],
+                    order=1, mode='constant').astype(np.uint8)
+
         if istogether:
-            return (np.sqqueeze(img), mask)
+            return (np.squeeze(img), mask)
+
+        # loaded_model = tf.keras.models.load_model(weight_path)
+
+        # model.load_model(weight_path)
+
         return mask
 
 
@@ -75,13 +89,12 @@ class MRA_BET(BaseModule):
     def init(self, weight_path):
         """
         Initialize the model with its weight.
-        
+
         Args:
             (string) weight_path : model's weight path
         """
         self.net = build_MRA_BET(weight_path)
 
-        
     def _preprocessing(self, path, min_percent=40, max_percent=98.5, out_min=0, out_max=1):
         """
         Preprocess the image from the path
@@ -94,6 +107,7 @@ class MRA_BET(BaseModule):
             (integer) out_max : maximum value of output (default : 1)
         Return:
             (numpy ndarray) data with shape (1, h, w, d, 1)
+
         """ 
 
         read_data = nib.load(path)
@@ -104,16 +118,16 @@ class MRA_BET(BaseModule):
         w_max = np.percentile(data, max_percent)
         width = w_max - w_min + 1
         center = w_min + width / 2
-        data = ((data-center)/width+0.5)*(out_max-out_min)
-        data = np.piecewise(data, [data <= out_min,data >= out_max],
+
+        data = ((data - center) / width + 0.5) * (out_max - out_min)
+        data = np.piecewise(data, [data <= out_min, data >= out_max],
                             [out_min, out_max, lambda data: data])
-                
+
         # ToTensor, unsqueezing
-        data = torch.from_numpy(data)[np.newaxis,np.newaxis,...]
+        data = torch.from_numpy(data)[np.newaxis, np.newaxis, ...]
         data = data.cuda()
         return data, read_data
 
-    
     def _postprocessing(self, data):
         """
         Postprocess the predicted data to reduce FP:wq
@@ -122,26 +136,28 @@ class MRA_BET(BaseModule):
             (numpy ndarray) 3d data with shape (h, w, d)
         Return:
             (numpy ndarray) 3d data with shape (h, w, d)
-        """ 
-        
+        """
+
         # opening
-        kernel = np.ones((5,5), np.int8)
-        data = [cv2.morphologyEx(data[:,:,z],cv2.MORPH_OPEN,kernel) for z in range(data.shape[2])]
-        data = np.transpose(np.asarray(data),(1,2,0))
-        
+        kernel = np.ones((5, 5), np.int8)
+        data = [cv2.morphologyEx(data[:, :, z], cv2.MORPH_OPEN, kernel) for z in range(data.shape[2])]
+        data = np.transpose(np.asarray(data), (1, 2, 0))
+
         # FP reduction using ccl
         img_labels, num_labels = ndimage.label(data)
-        sizes = ndimage.sum(data, img_labels, range(num_labels+1))
+        sizes = ndimage.sum(data, img_labels, range(num_labels + 1))
+
         remove_cluster = sizes < np.max(sizes)
         remove_pixel = remove_cluster[img_labels]
         data[remove_pixel] = 0
         data[data > 0] = 1
         
+
         # fill hole
         data = ndimage.binary_fill_holes(data).astype(np.float32)
-        
+
         return data
-    
+
     def predict(self, path, save_path=None, thres=0.5):
         """
         Brain tissue segmentation
@@ -151,25 +167,25 @@ class MRA_BET(BaseModule):
             (string) save_path : absolute path for saving data
             (float) thres : probability threshold to make a mask pixel white (default : 0.5)
         Return:
-            (numpy ndarray) 3d brain tissue mask 
-        """ 
+            (numpy ndarray) 3d brain tissue mask
+        """
 
         data, read_data = self._preprocessing(path)
-        
+
         self.net.eval()
         mask3d = np.zeros(np.squeeze(data).shape)
         for z in range(mask3d.shape[2]):
-            output = self.net(data[:,:,:,:,z])
+            output = self.net(data[:, :, :, :, z])
             output = torch.sigmoid(output)
             output = output.cpu().detach().numpy()
-            mask3d[:,:,z] = 1*(np.squeeze(output) >= thres)
-        
+            mask3d[:, :, z] = 1 * (np.squeeze(output) >= thres)
+
         mask3d = self._postprocessing(mask3d)
-        
+
         if save_path:
-            save_name = path.split("/")[-1].replace(".nii","_mask.nii")
+            save_name = path.split("/")[-1].replace(".nii", "_mask.nii")
+
             save_ = nib.Nifti1Image(mask3d, read_data.affine, read_data.header)
             nib.save(save_, os.path.join(save_path, save_name))
 
         return mask3d
-    
