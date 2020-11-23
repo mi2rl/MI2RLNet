@@ -48,23 +48,31 @@ mask = mra_bet.predict('path/of/img.nii', 'save_path')
 
 
 ## Blackblood Segmentation
+- The objective of this `blackblood segmentation` is to get the brain mask in MRI.
+
 ### Inference
 ```python
-from Brain.module import BlackbloodSegmentation
+from medimodule.Brain.module import BlackbloodSegmentation
+from medimodule.utils import Checker
+
+check = Checker()
 module = BlackbloodSegmentation()
+
+# check if the input is nifti file(.nii)
+check.check_input_type('path/of/img.nii', 'nii')
+
 # set the model with weight
-module.init('weight.pth')
+module.init('/path/for/segmentation.h5')
 
 # get a liver mask of the image
-mask = module.predict('/path/of/brain_seg.png')
+mask = module.predict('/path/of/seg_result.hdr')
 ```
 
 ### Sample
-- To-do
+<img src="imgs/blackblood.png" width="100%"></img>
 
 ### Model evaluation
-UNet Scored 0.808 score 
-
+UNet Scored 0.837 score 
 
 &#160;  
 ## Brain Aneurysm Segmentation

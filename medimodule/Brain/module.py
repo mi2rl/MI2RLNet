@@ -12,8 +12,6 @@ from scipy.ndimage import zoom
 
 from base import BaseModule
 from Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
-
-from base import BaseModule
 from Brain.mra_bet.load_model import build_MRA_BET
 
 
@@ -21,67 +19,54 @@ class BlackbloodSegmentation(BaseModule):
     def init(self, weight_path):
         """
         Initialize the model with its weight.
-
         Args:
             (string) weight_path : model's weight path
         """
         self.model = build_blackblood_segmentation(weight_path)
 
-
-
     def _preprocessing(self, path):
-
         """
         Preprocess the image from the path
         Args:
             (string) path : absolute path of image
         Return:
-            (numpy ndarray) image
+            (numpy ndarray) image shape (1, h, w, d, 1)
         """
-
-        windowing_range = [-40., 120.]
-
-        windowing_min = windowing_range[0] - windowing_range[1] // 2
-        windowing_max = windowing_range[0] + windowing_range[1] // 2
         image = sitk.ReadImage(path)
-        space = image.GetSpacing()
+        self.space = image.GetSpacing()
         image = sitk.GetArrayFromImage(image).astype('float32')
-
         self.img_shape = image.shape
         d, w, h = self.img_shape
 
-        image = ndimage.zoom(image, [.5, .5, .5], order=1, mode='constant', cval=0.)
-
+        # normalize
+        windowing_range = [-40., 120.]
+        windowing_min = windowing_range[0] - windowing_range[1] // 2
+        windowing_max = windowing_range[0] + windowing_range[1] // 2
+        image = ndimage.zoom(image, [.5, .5, .5], order=1, mode='constant')
         image = np.clip(image, windowing_min, windowing_max)
         image = (image - windowing_min) / (windowing_max - windowing_min)
-        image = image[np.newaxis, ..., np.newaxis]       # (1, d, w, h, 1)
+        image = image[np.newaxis, ..., np.newaxis]
         return image
-
 
     def predict(self, path, istogether=False):
         """
         blackblood segmentation
-        (string) path : image path (nii)
-        (bool) istogether : with image which was used or not
-
+        Args:
+            (string) path : image path (nii)
+            (bool) istogether : with image which was used or not
+        Return:
+            (numpy ndarray) blackblood mask with shape
         """
         path = os.path.abspath(path)
-        img = self._preprocessing(path)
-
-        mask = np.squeeze(self.model(img).numpy().argmax(axis=-1))
-        mask_shape = mask.shape
-        mask = zoom(mask, [self.img_shape[0]/mask_shape[0],
-                           self.img_shape[1]/mask_shape[1],
-                           self.img_shape[2]/mask_shape[2]],
+        image = self._preprocessing(path)
+        mask = np.squeeze(self.model(image).numpy().argmax(axis=-1))
+        self.mask_shape = mask.shape
+        mask = ndimage.zoom(mask, [self.img_shape[0]/self.mask_shape[0],
+                           self.img_shape[1]/self.mask_shape[1],
+                           self.img_shape[2]/self.mask_shape[2]],
                     order=1, mode='constant').astype(np.uint8)
-
         if istogether:
-            return (np.squeeze(img), mask)
-
-        # loaded_model = tf.keras.models.load_model(weight_path)
-
-        # model.load_model(weight_path)
-
+            return (np.squeeze(image), mask)
         return mask
 
 
@@ -189,4 +174,5 @@ class MRA_BET(BaseModule):
             nib.save(save_, os.path.join(save_path, save_name))
 
         return mask3d
+
 
