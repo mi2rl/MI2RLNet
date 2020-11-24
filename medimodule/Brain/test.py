@@ -7,12 +7,12 @@ Brain Moduel Test Code
 import argparse
 import os
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 
 import numpy as np
 import cv2
 import SimpleITK as sitk
-from utils import Checker
+from medimodule.utils import Checker
 import warnings
 import nibabel as nib
 
@@ -38,7 +38,7 @@ def main(args):
 
     ### MRA_BET Example
     if args.mode == 'mra_bet':
-        from Brain.module import MRA_BET
+        from medimodule.Brain.module import MRA_BET
         check.check_input_type(args.img, 'nii')
         check.set_gpu(gpu_idx=args.gpu, framework='pytorch')
         mra_bet = MRA_BET()
@@ -48,8 +48,7 @@ def main(args):
 
     ### Blackblood segmentation Example
     elif args.mode == 'blackblood_segmentation':
-        from medimodule.Brain import BlackbloodSegmentation
-        check.check_input_type(args.img, 'nii')
+        from medimodule.Brain.module import BlackbloodSegmentation
         check.set_gpu(gpu_idx=args.gpu, framework='tf2')
         blackblood_segmentation = BlackbloodSegmentation()
         blackblood_segmentation.init(args.weights)

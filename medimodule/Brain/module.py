@@ -7,12 +7,14 @@ import nibabel as nib
 import cv2
 import scipy.ndimage as ndimage
 import torch
+from medimodule.utils import Checker
+import warnings
 
 from scipy.ndimage import zoom
 
-from base import BaseModule
-from Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
-from Brain.mra_bet.load_model import build_MRA_BET
+from medimodule.base import BaseModule
+from medimodule.Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
+from medimodule.Brain.mra_bet.load_model import build_MRA_BET
 
 
 class BlackbloodSegmentation(BaseModule):
@@ -32,9 +34,28 @@ class BlackbloodSegmentation(BaseModule):
         Return:
             (numpy ndarray) image shape (1, h, w, d, 1)
         """
-        image = sitk.ReadImage(path)
-        self.space = image.GetSpacing()
-        image = sitk.GetArrayFromImage(image).astype('float32')
+        if Checker.check_input_type_bool(path, 'nii'):
+            image = sitk.ReadImage(path)
+            self.space = image.GetSpacing()
+            image = sitk.GetArrayFromImage(image).astype('float32')
+
+        elif Checker.check_input_type_bool(path, 'npy'):
+            image = np.load(path)
+            self.space = [1., 1., 1.]
+            warnings.warn(
+                '.npy is not recommended as an image format.'
+                'Since spacing cannot be identified from .npy, spacing is set as [1., 1., 1.].', UserWarning)
+
+        elif Checker.check_input_type_bool(path, 'dcm'):
+            raise ValueError(
+                '.dcm is not supported.'
+                'Please convert dcm dummies to analyze format.')
+
+        else:
+            input_ext = path.split('.')[-1]
+            raise ValueError(
+                f'.{input_ext} format is not supported.')
+
         self.img_shape = image.shape
         d, w, h = self.img_shape
 
@@ -60,10 +81,10 @@ class BlackbloodSegmentation(BaseModule):
         path = os.path.abspath(path)
         image = self._preprocessing(path)
         mask = np.squeeze(self.model(image).numpy().argmax(axis=-1))
-        self.mask_shape = mask.shape
-        mask = ndimage.zoom(mask, [self.img_shape[0]/self.mask_shape[0],
-                           self.img_shape[1]/self.mask_shape[1],
-                           self.img_shape[2]/self.mask_shape[2]],
+        mask_shape = mask.shape
+        mask = ndimage.zoom(mask, [self.img_shape[0]/ mask_shape[0],
+                           self.img_shape[1]/ mask_shape[1],
+                           self.img_shape[2]/ mask_shape[2]],
                     order=1, mode='constant').astype(np.uint8)
         if istogether:
             return (np.squeeze(image), mask)
