@@ -48,8 +48,7 @@ def main(args):
 
     ### Example LR Detection (L / R)
     elif args.mode == 'lr_detection':
-        sys.path.append("../")
-        from Chest import ChestLRDetection
+        from medimodule.Chest import ChestLRDetection
         detection = ChestLRDetection()
         detection.init(args.weights)
         predict = detection.predict(args.img)
@@ -59,3 +58,7 @@ def main(args):
 if __name__ == '__main__':
    argv = parse_arguments(sys.argv[1:])
    main(argv)
+
+
+
+
