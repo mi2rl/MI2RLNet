@@ -5,11 +5,11 @@ This **Liver** module consists of the following functions.
 - (TODO) HCC (Hepatocellular carcinoma) Segmentation
 
 ### Results
-| Modality |  Part   |                   Module                    | Results |
-| -------- | ------- | ------------------------------------------- | ------- |
-|    CT    | Abdomen |             Liver Segmentation              |   0.98  |
-|    CT    | Abdomen |         Hepatic Vessel Segmentation         |    -    |
-|    CT    | Abdomen | HCC (Hepatocellular carcinoma) Segmentation |    -    |
+| Modality |  Part   |                   Module                    |    Results     |
+| -------- | ------- | ------------------------------------------- | -------------- |
+|    CT    | Abdomen |             Liver Segmentation              |   DSC : 96.94  |
+|    CT    | Abdomen |         Hepatic Vessel Segmentation         |       -        |
+|    CT    | Abdomen | HCC (Hepatocellular carcinoma) Segmentation |       -        |
 
 
 ## Liver Segmentation
