@@ -68,12 +68,14 @@ class LiverSegmentation(BaseModule):
 
         self.img_shape = image.shape
         d, w, h = self.img_shape
+
+        imageo = image.copy()
         image = zoom(
             image, [self.space[-1]/5., 256./float(w), 256./float(h)], order=1, mode='constant')
         image = np.clip(image, 10, 190)
         image = (image - mean_std[0]) / mean_std[1]
         image = image[np.newaxis,...,np.newaxis] # (1, d, w, h, 1)
-        return image
+        return imageo, image
 
     def predict(self, path, istogether=False):
         """
@@ -88,7 +90,7 @@ class LiverSegmentation(BaseModule):
         """
 
         path = os.path.abspath(path)
-        img = self._preprocessing(path)
+        imgo, img = self._preprocessing(path)
         mask = np.squeeze(self.model(img).numpy().argmax(axis=-1))
         mask_shape = mask.shape
         mask = zoom(mask, [self.img_shape[0]/mask_shape[0], 
@@ -96,5 +98,5 @@ class LiverSegmentation(BaseModule):
                            self.img_shape[2]/mask_shape[2]],
                     order=1, mode='constant').astype(np.uint8)
         if istogether:
-            return (np.squeeze(img), mask)
+            return (np.squeeze(imgo), mask)
         return (mask)

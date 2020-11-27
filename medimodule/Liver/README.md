@@ -5,11 +5,11 @@ This **Liver** module consists of the following functions.
 - (TODO) HCC (Hepatocellular carcinoma) Segmentation
 
 ### Results
-| Modality | Part | Module | Results |
-| --- | --- | --- | --- |
-| CT | Abdomen | Liver Segmentation | - |
-| CT | Abdomen | Hepatic Vessel Segmentation | - |
-| CT | Abdomen | HCC (Hepatocellular carcinoma) Segmentation | - |
+| Modality |  Part   |                   Module                    | Results |
+| -------- | ------- | ------------------------------------------- | ------- |
+|    CT    | Abdomen |             Liver Segmentation              |   0.98  |
+|    CT    | Abdomen |         Hepatic Vessel Segmentation         |    -    |
+|    CT    | Abdomen | HCC (Hepatocellular carcinoma) Segmentation |    -    |
 
 
 ## Liver Segmentation
@@ -31,7 +31,7 @@ mask = module.predict('/path/of/liver.hdr')
 <img src="imgs/liver_segmentation.png" width="100%"></img>
 
 ### Weights
-- TODO
+- [link](https://drive.google.com/file/d/1oaURDlhh4K7S39XjxnaZShyLeUqvtbLC/view?usp=sharing)
 
 
 
