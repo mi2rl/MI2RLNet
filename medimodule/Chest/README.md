@@ -9,7 +9,7 @@ This **Chest** module consists of the following functions.
 | Modality  | Module | Results |
 | ---  | --- | --- |
 | X-ray  | Chest L,R Mark Detection | b0 mAP:99.28% |
-| X-ray | PA / Lateral / Others Classification |  |
+| X-ray | PA / Lateral / Others Classification | Acc: 94% (extra validation) |
 | CT | Contrast / Non-Contrast Classification | Acc: 96% (extra validation) |
 
 
@@ -30,7 +30,7 @@ detection.init(args.weights)
 predict = detection.predict(args.img)
 ```
 
-<img src="imgs/sample.png" width="50%"></img>
+<img src="imgs/lr_sample.png" width="50%"></img>
 
 ### Weights
 
@@ -58,7 +58,7 @@ checker = Checker()
 eCT_classifier = EnhanceCTClassifier()
 
 # sanity check
-checer.check_input_type('your input file', 'dcm')
+checker.check_input_type('your input file', 'dcm')
 
 # model init
 eCT_classifier.init('your weights file')
@@ -83,4 +83,35 @@ predict = eCT_classifier.predict('your input file')
 
 ## PA / Lateral / Others Classification  
 
-To Be Updated..
+This module can classify PA / Lateral / Others in X-ray.
+
+
+
+### Inference
+
+```python
+from medimodule.Chest.module import ViewpointClassifier
+from medimodule.utils import Checker
+
+checker = Checker()
+view_classifier = ViewpointClassifier()
+
+# sanity check
+checker.check_input_type('your input file', 'dcm')
+
+# model init
+view_classifier.init('your weights file')
+
+# input
+predict = view.predict('your input file')
+```
+
+**Input image example**
+
+<img src="imgs/view_sample.png" width="70%"></img>
+
+
+
+### Weights
+
+[weights link](https://drive.google.com/file/d/1iCa-iwrek-efn_zSmFNrxdP5q_UOYuoK/view?usp=sharing)
