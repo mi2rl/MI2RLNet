@@ -49,7 +49,6 @@ class AgeRegressor(BaseModule):
             (int) age : age prediction result (Month)
         """
         img = self._preprocessing(path)
-        print(img.shape)
         assert (img.shape[1] == 512) & (img.shape[2] == 512), "The size of image must be (batch, 512, 512, 1)"
         # in training pahse, we normalize value by divide 1200.
         # so if we want to get real value(age), have to multiply 1200.
