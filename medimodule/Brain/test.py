@@ -7,6 +7,7 @@ Brain Moduel Test Code
 import argparse
 import os
 import sys
+sys.path.append("../")
 
 import numpy as np
 import cv2
@@ -17,6 +18,8 @@ import warnings
 warnings.filterwarnings('ignore', '.*output shape of zoom.*')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+
+from utils import Checker
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
