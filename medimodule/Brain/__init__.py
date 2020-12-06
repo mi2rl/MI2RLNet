@@ -1,2 +1,2 @@
 from .module import BlackbloodSegmentation
-from .module import MRA_BET  
+from .module import MRI_BET  

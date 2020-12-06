@@ -7,14 +7,13 @@ import nibabel as nib
 import cv2
 import scipy.ndimage as ndimage
 import torch
+# sys.path.append("../")
 
 from scipy.ndimage import zoom
 
 from base import BaseModule
 from Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
-
-from base import BaseModule
-from Brain.mra_bet.load_model import build_MRA_BET
+from Brain.mri_bet.load_model import build_MRI_BET
 
 
 class BlackbloodSegmentation(BaseModule):
@@ -85,7 +84,7 @@ class BlackbloodSegmentation(BaseModule):
         return mask
 
 
-class MRA_BET(BaseModule):
+class MRI_BET(BaseModule):
     def init(self, weight_path):
         """
         Initialize the model with its weight.
@@ -93,14 +92,16 @@ class MRA_BET(BaseModule):
         Args:
             (string) weight_path : model's weight path
         """
-        self.net = build_MRA_BET(weight_path)
+        self.net = build_MRI_BET(weight_path)
 
-    def _preprocessing(self, path, min_percent=40, max_percent=98.5, out_min=0, out_max=1):
+
+    def _preprocessing(self, path, img_type, min_percent=40, max_percent=98.5, out_min=0, out_max=1):
         """
         Preprocess the image from the path
 
         Args:
             (string) path : absolute path of data
+            (string) img_type : MRI modality type for applying different preprocessing according to MRI modality
             (float) min_percent : Min percentile to compute, which must be between 0 and 100 inclusive (default : 40)
             (float) max_percent : Max percentile to compute, which must be between 0 and 100 inclusive (default : 98.5)
             (integer) out_min : minimum value of output (default : 0)
@@ -113,20 +114,24 @@ class MRA_BET(BaseModule):
         read_data = nib.load(path)
         data = read_data.get_fdata().astype(np.float32)
 
-        # normalizing
-        w_min = np.percentile(data, min_percent)
-        w_max = np.percentile(data, max_percent)
-        width = w_max - w_min + 1
-        center = w_min + width / 2
+        if img_type == 'T1':
+            pass
+        elif img_type == 'MRA':
+            # windowing
+            w_min = np.percentile(data, min_percent)
+            w_max = np.percentile(data, max_percent)
+            width = w_max - w_min + 1
+            center = w_min + width / 2
 
-        data = ((data - center) / width + 0.5) * (out_max - out_min)
-        data = np.piecewise(data, [data <= out_min, data >= out_max],
-                            [out_min, out_max, lambda data: data])
+            data = ((data - center) / width + 0.5) * (out_max - out_min)
+            data = np.piecewise(data, [data <= out_min, data >= out_max],
+                                [out_min, out_max, lambda data: data])
 
         # ToTensor, unsqueezing
         data = torch.from_numpy(data)[np.newaxis, np.newaxis, ...]
         data = data.cuda()
         return data, read_data
+
 
     def _postprocessing(self, data):
         """
@@ -146,46 +151,53 @@ class MRA_BET(BaseModule):
         # FP reduction using ccl
         img_labels, num_labels = ndimage.label(data)
         sizes = ndimage.sum(data, img_labels, range(num_labels + 1))
-
         remove_cluster = sizes < np.max(sizes)
         remove_pixel = remove_cluster[img_labels]
         data[remove_pixel] = 0
         data[data > 0] = 1
         
-
         # fill hole
         data = ndimage.binary_fill_holes(data).astype(np.float32)
 
         return data
 
-    def predict(self, path, save_path=None, thres=0.5):
+
+    def predict(self, path, img_type='T1', save_mask=False, save_stripping=False, thres=0.5):
         """
         Brain tissue segmentation
 
         Args:
             (string) path : absolute path of data
-            (string) save_path : absolute path for saving data
+            (string) img_type : MRI modality type('T1' for T1-weighted MRI, 'MRA' for MR angiography) 
+            (bool) save_mask : Boolean type(True for saving binary BET mask. It will be saved in the same path as the input data)
+            (bool) save_stripping : Boolean type(True for saving skull-stripped brain image data. It will be saved in the same path as the input data)
             (float) thres : probability threshold to make a mask pixel white (default : 0.5)
         Return:
             (numpy ndarray) 3d brain tissue mask
         """
 
-        data, read_data = self._preprocessing(path)
-
+        data, read_data = self._preprocessing(path, img_type=img_type)
+        
         self.net.eval()
         mask3d = np.zeros(np.squeeze(data).shape)
         for z in range(mask3d.shape[2]):
             output = self.net(data[:, :, :, :, z])
             output = torch.sigmoid(output)
-            output = output.cpu().detach().numpy()
-            mask3d[:, :, z] = 1 * (np.squeeze(output) >= thres)
+            output = output.cpu().detach().numpy().squeeze()
+            mask3d[:, :, z] = np.where(output >= thres, 1, 0)
 
         mask3d = self._postprocessing(mask3d)
 
-        if save_path:
-            save_name = path.split("/")[-1].replace(".nii", "_mask.nii")
-
+        if save_mask is True:
+            save_name = path.replace(".nii", "_mask.nii")
             save_ = nib.Nifti1Image(mask3d, read_data.affine, read_data.header)
-            nib.save(save_, os.path.join(save_path, save_name))
+            nib.save(save_, save_name)
+
+        if save_stripping is True:
+            save_name = path.replace(".nii", "_stripping.nii")
+            org_img = read_data.get_fdata()
+            save_ = nib.Nifti1Image(np.where(mask3d==1,org_img,0), 
+                                    read_data.affine, read_data.header)
+            nib.save(save_, save_name)
 
         return mask3d
