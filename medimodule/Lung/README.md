@@ -5,11 +5,11 @@ This **Lung** module consists of the following functions.
 ### Results
 | Modality | Module | Results |
 | --- | --- | --- |
-| CXR | Lung Segmentation | Dice 0.98 |
+| CXR | Lung Segmentation | Dice 0.97 |
 
 
 ## Lung Segmentation
-The segmentation model trained by `JSRT/AMC/AMC with lung problem` dataset. 
+The segmentation model trained by `JSRT` dataset. 
 
 ### Inference
 
@@ -22,7 +22,7 @@ module = LungSegmentation()
 module.init('/path/for/lung/Lung_segmentation.hdf5')
 
 # get a result
-result = module.predict('/path/of/lung/folder')
+result = module.predict('/path/of/lung.png')
 ```
 ![sample](https://user-images.githubusercontent.com/55068090/97973121-f1c93880-1e08-11eb-8689-7c93f90b4b96.png)
 

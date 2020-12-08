@@ -2,11 +2,12 @@ import os
 import gc
 import cv2
 import numpy as np
-from skimage import transform, io, img_as_float32
+from skimage import transform, io, img_as_float
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 
+from medimodule.utils import Checker
 from medimodule.base import BaseModule
 from medimodule.Lung.lung_segmentation.utils.postprocessing import _postprocessing
 
@@ -23,88 +24,56 @@ class LungSegmentation(BaseModule):
         self.model = load_model(weight_path)
 
 
-    def _preprocessing(self, ImgPath):
+    def _preprocessing(self, path):
         """
         Preprocess the image from the path
         
         Args:
-            (string) path : file path of image
+            (string) path : absolute path of image
         Return:
             (numpy ndarray) image
         """
         
-        '''
-        TODO : check image format
-            - png : pass
-        '''
+        if Checker.check_input_type_bool(path, 'dcm'):
+            raise ValueError(
+                '.dcm is not supported. '
+                'Please convert dcm dummies to analyze format.')
+            
+        Img = img_as_float(io.imread(path))
+        Img = transform.resize(Img, (1024,1024))
+        Img = np.expand_dims(Img, -1)
+
+        FileName = os.path.split(path)[-1]
         
-        Imgs = []
-        FileNames = []
+        Img_mean = Img.mean()
+        Img_std  = np.sqrt(((Img**2).mean()) - (Img.mean())**2)
 
-        Imgs_mean = 0.
-        Imgs_meansq = 0.
+        Img -= Img_mean
+        Img /= Img_std
 
-        for i, filename in enumerate(os.listdir(ImgPath)):
-
-            if (os.path.isdir(os.path.join(ImgPath, filename))):
-                continue
-
-            img = img_as_float(io.imread(os.path.join(ImgPath, filename)))
-            img = transform.resize(img, (1024,1024))
-            img = np.expand_dims(img, -1)
-            Imgs.append(img)
-            FileNames.append(filename)
-
-            Imgs_mean += img.mean()
-            Imgs_meansq += (img**2).mean()
-
-        Imgs = np.array(Imgs)
-        FileNames = np.array(FileNames)
-
-        Imgs_mean /= len(FileNames)
-        Imgs_meansq /= len(FileNames)
-        Imgs_std  = np.sqrt(Imgs_meansq - Imgs_mean**2)
-
-        Imgs -= Imgs_mean
-        Imgs /= Imgs_std
-
-        print("Preprocessing done on {} files.....".format(len(FileNames)))
-        return Imgs, FileNames
+        print("Preprocessing done on {} files...".format(str(FileName)))
+        return Img, FileName
     
 
     
-    def predict(self, ImgPath):
+    def predict(self, path):
         """
         Lung segmentation
         
         Args:
-            (string) path : file path of image
+            (string) path : image path
             
         Return:
-            Lung mask saved in Mask_DIR folder 
+            (numpy ndarray) Lung mask with shape (width, height)
         """
-        Mask_DIR = ImgPath + "/LungMask"
-        
-        testData, filenames = self._preprocessing(ImgPath)
+        testData, filenames = self._preprocessing(path)
         testData = np.asarray(testData)
                 
         if (len(testData.shape) == 3):
-            testData = np.expand_dims(testData, -1)
-        if (not os.path.isdir(Mask_DIR)):
-            os.makedirs(Mask_DIR)
+            testData = np.expand_dims(testData, 0)
             
         preds = self.model.predict(testData, batch_size=1)
         preds = preds > 0.5
-        processed = _postprocessing(preds)
-
-        for i in range(len(processed)):
-            mask = processed[i, :, :, 0]
-            mask = mask * 255
-            cv2.imwrite(Mask_DIR + "/" + filenames[i], mask)
-
-        del self.model
-        gc.collect()
-        K.clear_session()
-        print(" Test Done ! ")
-        
-        return None
+        mask = _postprocessing(preds)
+        print("Test Done !")
+        return mask
