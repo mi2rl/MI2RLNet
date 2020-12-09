@@ -22,8 +22,7 @@ from kidney_tumor_segmentation.utils.run_eval_cascaded import TransAxis, resampl
 
 def get_config(mode):
     config = {
-        "1": { # 1st cascade
-            'checkpoint': '../checkpoint/model0.h5',
+        "1": {
             'depth': 3,
             'wlower': -300,
             'wupper': 600,
@@ -31,14 +30,13 @@ def get_config(mode):
             'num_labels_1ststg': 1
             }, 
         "2_1": {
-            'checkpoint': '../checkpoint/model1.h5',
             'depth': 3,
             'wlower': -300,
             'wupper': 600,
             'input_dim': (200, 200, 200)
             },
         "2_2": {
-            'checkpoint': '../checkpoint/model2.h5',
+
             'lossfn': 'dice',
             'depth': 4,
             'standard': 'normal',
@@ -47,7 +45,6 @@ def get_config(mode):
             'wwidth': 400
             },
         "2_3": {
-            'checkpoint': '../checkpoint/model3.h5',
             'lossfn': 'dice',
             'depth': 3,
             'standard': 'minmax',
@@ -56,7 +53,6 @@ def get_config(mode):
             'wwidth': 400
             },
         "2_4": {
-            'checkpoint': '../checkpoint/model4.h5',
             'lossfn': 'focaldice',
             'depth': 3,
             'standard': 'minmax',
@@ -65,7 +61,6 @@ def get_config(mode):
             'wwidth': 400
             },
         "2_5": {
-            'checkpoint': '../checkpoint/model5.h5',
             'lossfn': 'dice',
             'depth': 3,
             'standard': 'normal',
@@ -78,17 +73,16 @@ def get_config(mode):
 
 
 class KidneyTumorSegmentation(BaseModule):
-    def init(self, mode):
+    def init(self, mode, weight_path):
         
-        self.model = kidney_tumor_segmentation(mode)
+        self.model = kidney_tumor_segmentation(mode, weight_path)
         self.config = get_config(mode)
     
     def _preprocessing(self, mode, path):
       
         if Checker.check_input_type_bool(path, 'nii'):
             if mode == '1':
-                print("model1")
-#                 data = sitk.ReadImage(path)
+
                 config = self.config
                 img_ct_sag = sitk.ReadImage(path)
                 img_ct_axial = TransAxis(img_ct_sag, dtype=np.int16)
@@ -127,8 +121,8 @@ class KidneyTumorSegmentation(BaseModule):
                 else:
                     raw_ct_right_shape = (raw_ct_shape[0], raw_ct_shape[1], int(raw_ct_shape[2] * 3 / 5))
                     raw_pred_right_shape = [raw_ct_shape[0], 200, 200, config['num_labels_1ststg']]
-                    raw_pred_right_tmp = np.zeros(shape=raw_pred_right_shape)  # raw_ct_shape[0], 200, 200, 3
-                    raw_pred_right_tmp_cnt = np.zeros(shape=raw_pred_right_shape)  # raw_ct_shape[0], 200, 200, 3
+                    raw_pred_right_tmp = np.zeros(shape=raw_pred_right_shape)  
+                    raw_pred_right_tmp_cnt = np.zeros(shape=raw_pred_right_shape)  
 
                     z_list = list(np.arange(0, raw_ct_shape[0] - 200, 100)) + [raw_ct_shape[0] - 200]
                     x_start_src = 0
@@ -157,7 +151,7 @@ class KidneyTumorSegmentation(BaseModule):
             
                 # left kidney 
                 if not is_large_z:
-                    print("is not large z")
+
                     z_start_dst = int((200 - raw_ct_shape[0]) / 2)
                     z_end_dst = z_start_dst + raw_ct_shape[0]
                     x_start_src = int(raw_ct_shape[2] * 2 / 5)
@@ -176,7 +170,7 @@ class KidneyTumorSegmentation(BaseModule):
                     raw_ct_left_rs_normed = np.expand_dims(raw_ct_left_rs_normed, axis=-1)
                     
                 else: 
-                    print("is large z")
+ 
                     raw_ct_left_shape = (raw_ct_shape[0], raw_ct_shape[1], int(raw_ct_shape[2] * 3 / 5))
 
                     raw_pred_left_shape = [raw_ct_shape[0], 200, 200, config['num_labels_1ststg']]
@@ -214,7 +208,6 @@ class KidneyTumorSegmentation(BaseModule):
             else: 
                 if mode == '2_1':
                     config = self.config
-                    print("mode2_1 preprocessing")
 
                     img_ct_sag = sitk.ReadImage(path)
                     img_ct_axial = TransAxis(img_ct_sag, dtype=np.int16)
@@ -332,7 +325,6 @@ class KidneyTumorSegmentation(BaseModule):
 
                 else:
                     config = self.config
-                    print("mode2_5")
                  
                     prep = Preprocessing(
                         task=config['task'],
@@ -355,7 +347,7 @@ class KidneyTumorSegmentation(BaseModule):
         if mode == '1':
             config = self.config
             model = self.model
-            print("mode1 prediction")
+
             raw_ct_shape, raw_ct_right_shape, raw_ct_left_shape, raw_ct_right_rs_normed, raw_ct_left_rs_normed, is_large_z, z_start_dst, z_end_dst  = self._preprocessing(mode, path)
             
             # right
@@ -439,8 +431,8 @@ class KidneyTumorSegmentation(BaseModule):
                 config = self.config
                 model = self.model
                 raw_ct_right_rs_normed, raw_ct_left_rs_normed, raw_ct_right_2nd_shape, raw_ct_left_2nd_shape, raw_ct, is_right_kidney, is_left_kidney, kidney_right_start, kidney_right_end, kidney_left_start, kidney_left_end = self._preprocessing(mode, path)
-#                 raw_ct_shape, raw_ct_right_shape, raw_ct_left_shape, raw_ct_right_rs_normed, raw_ct_left_rs_normed, is_large_z, z_start_dst, z_end_dst
-                print("model2_1 prediction")
+
+
                 if is_right_kidney:
                     prediction = model.predict(x=raw_ct_right_rs_normed)
                     if np.shape(prediction)[-1] == 1:
@@ -500,7 +492,7 @@ class KidneyTumorSegmentation(BaseModule):
             else: 
                 model = self.model
                 config = self.config
-                print("mode2_5")
+  
                 img_orig, mask_orig, prep = self._preprocessing(mode, path)
                 
                 result_save = np.zeros_like(sitk.GetArrayFromImage(mask_orig))
@@ -547,18 +539,18 @@ class KidneyTumorSegmentation(BaseModule):
                 temp2 = np.swapaxes(temp2, 0, 1)
                 temp2 = np.swapaxes(temp2, 1, 2)
                 
-                return temp2
+                return temp2, spacing
     
 if __name__ == "__main__":
     
     Checker.set_gpu('4', 'tf2')
 #     backend.set_session(get_session())
     tumor_segmentation = KidneyTumorSegmentation()
-    tumor_segmentation.init('2_3')
+    tumor_segmentation.init('2_1', '../checkpoint/model1.h5')
 #     img_rt , img_lt, is_large_z = tumor_segmentation._preprocessing("1", '../../data/interpolated/case_00000/imaging.nii')
 #     img_rt , img_lt, is_right_kidney, is_left_kidney = tumor_segmentation._preprocessing("1", '../../data/interpolated/case_00000/imaging.nii')
 #     img_orig, mask_orig, prep = tumor_segmentation._preprocessing("2_3", '../../data/interpolated/case_00000/imaging.nii')
 #     print(img_rt.shape, img_lt.shape)
-    raw_pred_whole = tumor_segmentation.predict("2_3", '../../data/interpolated/case_00000/imaging.nii')
+    raw_pred_whole = tumor_segmentation.predict("2_1", '../../data/interpolated/case_00000/imaging.nii')
     print(raw_pred_whole.shape)
     
