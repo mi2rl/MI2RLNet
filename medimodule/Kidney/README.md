@@ -34,7 +34,7 @@ All checkpoints are located in `checkpoint/`. Checkpoints used in challenges wil
   `python evaluation.py --mode 2_3 --testset /path/testset`
   
   
-<img src="imgs/kidney_tumor_segmentation.png" width="100%"></img>
+<img src="imgs/main_1.png" width="100%"></img>
 
 ### Weights
 Weights : https://github.com/mi2rl/private-code-house
