@@ -43,6 +43,7 @@ Weights : https://github.com/mi2rl/private-code-house
 
 ### Dataset : KiTS19_ACE
 KiTS 2019 challenge in MICCAI 2019 https://kits19.grand-challenge.org/ 
+
 Team name : ACE (Asan Coreline Ensemble)  
 http://results.kits-challenge.org/miccai2019/manuscripts/sungchul7039_3.pdf
 
