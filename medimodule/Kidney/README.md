@@ -32,8 +32,11 @@ All checkpoints are located in `checkpoint/`. Checkpoints used in challenges wil
   2_4 : model with focaldice loss, minmax scaling and using **ALL** kidney in CT.  
   2_5 : model with dice loss, normalization with tumor's mean and std and using **ALL** kidney in CT.  
   `python evaluation.py --mode 2_3 --testset /path/testset`
-  
-![alt-text-1](main_1.png) ![alt-text-2](masked_2_2.png)
+
+<tr>
+    <td><img src="main_1.png" width=270 height=480></td>
+    <td><img src="masked_2_2.png" width=270 height=480></td>
+</tr>
 
 
 ### Weights
