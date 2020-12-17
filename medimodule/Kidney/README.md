@@ -33,12 +33,8 @@ All checkpoints are located in `checkpoint/`. Checkpoints used in challenges wil
   2_5 : model with dice loss, normalization with tumor's mean and std and using **ALL** kidney in CT.  
   `python evaluation.py --mode 2_3 --testset /path/testset`
   
-<p float="left">
-<img src="main_1.png" width="50%"></img>
-</p>
-<p float="right">
-<img src="masked_2_2.png" width="50%"></img>
-</p>
+![alt-text-1](main_1.png) ![alt-text-2](masked_2_2.png)
+
 
 ### Weights
 Weights : https://github.com/mi2rl/private-code-house
