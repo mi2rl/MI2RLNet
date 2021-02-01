@@ -2,6 +2,12 @@ import os
 import sys
 import cv2
 import argparse
+import numpy as np
+import nibabel as nib
+
+sys.path.append(os.getcwd())
+from medimodule.utils import Checker
+from medimodule.Liver import LiverSegmentation
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -18,19 +24,15 @@ def parse_arguments(argv):
 
 
 def main(args):
-    from medimodule.utils import Checker
     img_path = os.path.abspath(args.img)
     
     if args.mode == 'liver_segmentation':
         ### Liver Segmentation
-        from medimodule.Liver import LiverSegmentation
         Checker.set_gpu(args.gpus, 'tf2')
         liver_segmentation = LiverSegmentation()
         liver_segmentation.init(os.path.abspath(args.weights))
         result = liver_segmentation.predict(img_path)
         if args.save_path is not None:
-            import numpy as np
-            import nibabel as nib
             temp2 = np.swapaxes(result, 1, 2)
             temp2 = np.swapaxes(temp2, 0, 1)
             temp2 = np.swapaxes(temp2, 1, 2)
@@ -43,8 +45,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # If running test.py in the module, add the root path.
-    sys.path.append('../../')
     args = parse_arguments(sys.argv[1:])
     main(args)
     

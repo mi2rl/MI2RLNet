@@ -1,43 +1,62 @@
 # Brain
 This **Brain** module consists of the following functions.
--  MRA BET(MR angiography brain extraction tool)
+-  MRI BET (Brain Extraction Tool for T1-wegithed MRI, MR angiography)
 -  Brain Blackblood segmentation
-
 - (TODO) Brain Aneurysm Segmentation
 
 ### Results
 | Modality | Part | Module | Results |
 | --- | --- | --- | --- |
+<<<<<<< master
 | MRA | Brain | MRA BET | - |
 | blackblood | Brain | Brain blackblood Segmentation | 0.837 |
 | MRA | Brain | Brain Aneurysm Segmentation | - |
+=======
+| T1-weighted MRI | Brain | MRI BET | 93.35 (DSC%) |
+| MRA | Brain | MRI BET | - |
+| blackblood | Brain | Brain blackblood Segmentation | - |
+
+>>>>>>> master
 
 &#160; 
-## MRA BET
-- `MRA BET` is the preprocessing tool to segment brain tissue in MRA images using the U-Net from the paper ["U-Net: Convolutional Networks for Biomedical Image Segmentation"](https://arxiv.org/abs/1505.04597)
+## MRI BET
+- `MRI BET` is the preprocessing tool for skull stripping, or brain extraction in MR modalities(T1-weighted MRI, MRA) using the U-Net from the paper ["U-Net: Convolutional Networks for Biomedical Image Segmentation"](https://arxiv.org/abs/1505.04597)
 
 
 ### Inference
 
 ```python
-### MRA_BET Example 
-from medimodule.Brain.module import MRA_BET
+### MRI_BET Example 
+from medimodule.Brain.module import MRI_BET
 from medimodule.utils import Checker
 
 check = Checker()
-mra_bet = MRA_BET()
+mri_bet = MRI_BET()
 
-# check if the input data type is nifti(.nii)
+# Check if the input data type is nifti(.nii)
 check.check_input_type('path/of/img.nii', 'nii')
-# allocate the gpu
+
+# Allocate the gpu
 check.set_gpu(gpu_number, framework='pytorch')
 
-# set the model with weight
-mra_bet.init('path/of/weight.pth')
-# get a brain tissue mask of the input data(put the saving path if you want to save the output mask)
-mask = mra_bet.predict('path/of/img.nii', 'save_path')
+# Set the model with weight
+# Choose an appropriate weight according to the data modality
+mri_bet.init('path/of/weight.pth')
+
+# Get a brain tissue mask of the input data
+# img_type : MRI modality(T1/MRA)
+# save_mask : set True if you want to save the binary bet mask
+# save_stripping : set True if you want to save the skull-stripped image
+mask = mri_bet.predict('path/input_img.nii', 
+                            img_type='T1',
+                            save_mask=True, 
+                            save_stripping=True) 
 ```
 
+#### result of T1-weighted MRI BET
+<img src="imgs/mri_bet.png" width="100%"></img>
+
+#### result of MRA BET
 <img src="imgs/mra_bet.png" width="100%"></img>
 
 ### Weights
@@ -47,6 +66,7 @@ mask = mra_bet.predict('path/of/img.nii', 'save_path')
 - [UNet] - [code](https://github.com/milesial/Pytorch-UNet)
 
 
+&#160;  
 ## Blackblood Segmentation
 - The objective of this `blackblood segmentation` is to get the black blood vessel in brain MRI.
 
@@ -75,4 +95,8 @@ mask = blackblood.predict('/path/of/blackblood_mask.nii')
 
 
 &#160;  
+<<<<<<< master
 ## Brain Aneurysm Segmentation
+=======
+## (Todo) Brain Aneurysm Segmentation
+>>>>>>> master
