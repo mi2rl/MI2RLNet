@@ -7,16 +7,10 @@ This **Brain** module consists of the following functions.
 ### Results
 | Modality | Part | Module | Results |
 | --- | --- | --- | --- |
-<<<<<<< master
-| MRA | Brain | MRA BET | - |
-| blackblood | Brain | Brain blackblood Segmentation | 0.837 |
-| MRA | Brain | Brain Aneurysm Segmentation | - |
-=======
 | T1-weighted MRI | Brain | MRI BET | 93.35 (DSC%) |
 | MRA | Brain | MRI BET | - |
-| blackblood | Brain | Brain blackblood Segmentation | - |
+| blackblood | Brain | Brain blackblood Segmentation | 0.837 |
 
->>>>>>> master
 
 &#160; 
 ## MRI BET
@@ -95,8 +89,4 @@ mask = blackblood.predict('/path/of/blackblood_mask.nii')
 
 
 &#160;  
-<<<<<<< master
-## Brain Aneurysm Segmentation
-=======
 ## (Todo) Brain Aneurysm Segmentation
->>>>>>> master
