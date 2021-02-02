@@ -20,67 +20,73 @@ class BlackbloodSegmentation(BaseModule):
     def init(self, weight_path):
         """
         Initialize the model with its weight.
-
         Args:
             (string) weight_path : model's weight path
         """
         self.model = build_blackblood_segmentation(weight_path)
 
-
-
     def _preprocessing(self, path):
-
         """
         Preprocess the image from the path
         Args:
             (string) path : absolute path of image
         Return:
-            (numpy ndarray) image
+            (numpy ndarray) image shape (1, h, w, d, 1)
         """
+        if Checker.check_input_type_bool(path, 'nii'):
+            image = sitk.ReadImage(path)
+            self.space = image.GetSpacing()
+            image = sitk.GetArrayFromImage(image).astype('float32')
 
-        windowing_range = [-40., 120.]
+        elif Checker.check_input_type_bool(path, 'npy'):
+            image = np.load(path)
+            self.space = [1., 1., 1.]
+            warnings.warn(
+                '.npy is not recommended as an image format.'
+                'Since spacing cannot be identified from .npy, spacing is set as [1., 1., 1.].', UserWarning)
 
-        windowing_min = windowing_range[0] - windowing_range[1] // 2
-        windowing_max = windowing_range[0] + windowing_range[1] // 2
-        image = sitk.ReadImage(path)
-        space = image.GetSpacing()
-        image = sitk.GetArrayFromImage(image).astype('float32')
+        elif Checker.check_input_type_bool(path, 'dcm'):
+            raise ValueError(
+                '.dcm is not supported.'
+                'Please convert dcm dummies to analyze format.')
+
+        else:
+            input_ext = path.split('.')[-1]
+            raise ValueError(
+                f'.{input_ext} format is not supported.')
 
         self.img_shape = image.shape
         d, w, h = self.img_shape
 
-        image = ndimage.zoom(image, [.5, .5, .5], order=1, mode='constant', cval=0.)
-
+        # normalize
+        windowing_range = [-40., 120.]
+        windowing_min = windowing_range[0] - windowing_range[1] // 2
+        windowing_max = windowing_range[0] + windowing_range[1] // 2
+        image = ndimage.zoom(image, [.5, .5, .5], order=1, mode='constant')
         image = np.clip(image, windowing_min, windowing_max)
         image = (image - windowing_min) / (windowing_max - windowing_min)
-        image = image[np.newaxis, ..., np.newaxis]       # (1, d, w, h, 1)
+        image = image[np.newaxis, ..., np.newaxis]
         return image
-
 
     def predict(self, path, istogether=False):
         """
         blackblood segmentation
-        (string) path : image path (nii)
-        (bool) istogether : with image which was used or not
-
+        Args:
+            (string) path : image path (nii)
+            (bool) istogether : with image which was used or not
+        Return:
+            (numpy ndarray) blackblood mask with shape
         """
         path = os.path.abspath(path)
-        img = self._preprocessing(path)
-
-        mask = np.squeeze(self.model(img).numpy().argmax(axis=-1))
+        image = self._preprocessing(path)
+        mask = np.squeeze(self.model(image).numpy().argmax(axis=-1))
         mask_shape = mask.shape
-        mask = zoom(mask, [self.img_shape[0]/mask_shape[0],
-                           self.img_shape[1]/mask_shape[1],
-                           self.img_shape[2]/mask_shape[2]],
+        mask = ndimage.zoom(mask, [self.img_shape[0]/ mask_shape[0],
+                           self.img_shape[1]/ mask_shape[1],
+                           self.img_shape[2]/ mask_shape[2]],
                     order=1, mode='constant').astype(np.uint8)
-
         if istogether:
-            return (np.squeeze(img), mask)
-
-        # loaded_model = tf.keras.models.load_model(weight_path)
-
-        # model.load_model(weight_path)
-
+            return (np.squeeze(image), mask)
         return mask
 
 
@@ -109,7 +115,7 @@ class MRI_BET(BaseModule):
         Return:
             (numpy ndarray) data with shape (1, h, w, d, 1)
 
-        """ 
+        """
 
         read_data = nib.load(path)
         data = read_data.get_fdata().astype(np.float32)
@@ -155,6 +161,7 @@ class MRI_BET(BaseModule):
         remove_pixel = remove_cluster[img_labels]
         data[remove_pixel] = 0
         data[data > 0] = 1
+
         
         # fill hole
         data = ndimage.binary_fill_holes(data).astype(np.float32)
@@ -201,3 +208,5 @@ class MRI_BET(BaseModule):
             nib.save(save_, save_name)
 
         return mask3d
+
+

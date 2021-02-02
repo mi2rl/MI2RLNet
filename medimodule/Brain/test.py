@@ -7,13 +7,14 @@ Brain Moduel Test Code
 import argparse
 import os
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 
 import numpy as np
 import cv2
 import SimpleITK as sitk
-from utils import Checker
+from medimodule.utils import Checker
 import warnings
+import nibabel as nib
 
 warnings.filterwarnings('ignore', '.*output shape of zoom.*')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -66,6 +67,7 @@ def main(args):
         print(out.shape, type(out), out)
 
 if __name__ == '__main__':
-   argv = parse_arguments(sys.argv[1:])
-   main(argv)
+    argv = parse_arguments(sys.argv[1:])
+    main(argv)
+
 

@@ -9,7 +9,7 @@ This **Brain** module consists of the following functions.
 | --- | --- | --- | --- |
 | T1-weighted MRI | Brain | MRI BET | 93.35 (DSC%) |
 | MRA | Brain | MRI BET | - |
-| blackblood | Brain | Brain blackblood Segmentation | - |
+| blackblood | Brain | Brain blackblood Segmentation | 0.837 |
 
 
 &#160; 
@@ -62,22 +62,30 @@ mask = mri_bet.predict('path/input_img.nii',
 
 &#160;  
 ## Blackblood Segmentation
+- The objective of this `blackblood segmentation` is to get the black blood vessel in brain MRI.
+
 ### Inference
 ```python
-from Brain.module import BlackbloodSegmentation
-module = BlackbloodSegmentation()
-# set the model with weight
-module.init('weight.pth')
+from medimodule.Brain.module import BlackbloodSegmentation
+from medimodule.utils import Checker
 
-# get a liver mask of the image
-mask = module.predict('/path/of/brain_seg.png')
+check = Checker()
+blackblood = BlackbloodSegmentation()
+
+# check if the input is nifti file(.nii)
+check.check_input_type('path/of/img.nii', 'nii')
+# allocate the gpu
+check.set_gpu(gpu_idx, framework='tf2')
+
+# set the model with weight
+blackblood.init('path/of/weight.h5')
+
+# get a blackblood mask of the image
+mask = blackblood.predict('/path/of/blackblood_mask.nii')
 ```
 
 ### Sample
-- To-do
-
-### Model evaluation
-UNet Scored 0.808 score 
+<img src="imgs/blackblood.png" width="100%"></img>
 
 
 &#160;  
