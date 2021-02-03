@@ -1,70 +1,27 @@
-# coding: utf-8
+import tensorflow_addons as tfa
+from tensorflow_addons.layers import InstanceNormalization
 
+# From model_2_5
 import tensorflow as tf
+import tensorflow.keras.backend as K
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import GaussianNoise
+from tensorflow.keras.layers import Conv3D
+from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.layers import MaxPooling3D
+from tensorflow.keras.layers import ZeroPadding3D
+from tensorflow.keras.layers import Lambda
+from tensorflow.keras.layers import Conv3DTranspose
+from tensorflow.keras.layers import GlobalAveragePooling3D
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Reshape
+from tensorflow.keras.layers import Multiply
 from tensorflow.keras.models import Model
-# from tensorflow.keras import layers
-from tensorflow.keras.layers import Dense, Activation, Flatten, Lambda, LeakyReLU, Multiply, Reshape, ThresholdedReLU
-from keras_contrib.layers import InstanceNormalization
-from tensorflow.keras.layers import (Input, Conv3D, MaxPooling3D, UpSampling3D, ZeroPadding3D, Cropping3D, Conv3DTranspose,
-                          GlobalAveragePooling3D)
-# from tensorflow.keras.optimizers import Adam
-# from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from tensorflow.keras.layers import BatchNormalization, GaussianNoise
-from tensorflow.keras.layers import concatenate, add, multiply
-# from tensorflow.keras.preprocessing import sequence
-from tensorflow.keras import backend as K
-
-smooth = 1.
+from tensorflow.keras.layers import Dense, Activation, Flatten, Lambda, LeakyReLU, Multiply, Reshape, ThresholdedReLU, Add
 
 
-def average_dice_coef(y_true, y_pred):
-    y_pred = ThresholdedReLU(0.5)(y_pred)
-    loss = 0
-    label_length = y_pred.get_shape().as_list()[-1]
-    for num_label in range(label_length):
-        y_true_f = K.flatten(y_true[..., num_label])
-        y_pred_f = K.flatten(y_pred[..., num_label])
-        intersection = K.sum(y_true_f * y_pred_f)
-        loss += (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-    return loss / label_length  # 1>= loss >0
 
-
-def average_dice_coef_loss(y_true, y_pred):
-    return -average_dice_coef(y_true, y_pred)
-
-def avg_dice_0(y_true, y_pred):
-    y_pred = ThresholdedReLU(0.5)(y_pred)
-    loss = 0
-    num_label = 0
-    y_true_f = K.flatten(y_true[..., num_label])
-    y_pred_f = K.flatten(y_pred[..., num_label])
-    intersection = K.sum(y_true_f * y_pred_f)
-    loss += (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-    return loss  # 1>= loss >0
-
-def avg_dice_1(y_true, y_pred):
-    y_pred = ThresholdedReLU(0.5)(y_pred)
-    loss = 0
-    num_label = 1
-    y_true_f = K.flatten(y_true[..., num_label])
-    y_pred_f = K.flatten(y_pred[..., num_label])
-    intersection = K.sum(y_true_f * y_pred_f)
-    loss += (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-    return loss   # 1>= loss >0
-
-def avg_dice_2(y_true, y_pred):
-    y_pred = ThresholdedReLU(0.5)(y_pred)
-    loss = 0
-    num_label = 2
-    y_true_f = K.flatten(y_true[..., num_label])
-    y_pred_f = K.flatten(y_pred[..., num_label])
-    intersection = K.sum(y_true_f * y_pred_f)
-    loss += (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-    return loss  # 1>= loss >0
-
-
-def load_model(input_shape, num_labels, axis=-1, base_filter=32, depth_size=4, se_res_block=True, se_ratio=16,
-               noise=0.1, last_relu=False, atten_gate=False):
+def ACE_CNet(input_shape, num_labels, axis=-1, base_filter=32, depth_size=4, se_res_block=True, se_ratio=16,noise=0.1, last_relu=False, atten_gate=False):
     def conv3d(layer_input, filters, axis=-1, se_res_block=True, se_ratio=16, down_sizing=True):
         if down_sizing == True:
             layer_input = MaxPooling3D(pool_size=(2, 2, 2))(layer_input)
@@ -81,7 +38,7 @@ def load_model(input_shape, num_labels, axis=-1, base_filter=32, depth_size=4, s
             d = Multiply()([d, se])
             shortcut = Conv3D(filters, (3, 3, 3), use_bias=False, padding='same')(layer_input)
             shortcut = InstanceNormalization(axis=axis)(shortcut)
-            d = add([d, shortcut])
+            d = Add()([d, shortcut])
         d = LeakyReLU(alpha=0.3)(d)
         return d
 
@@ -91,7 +48,7 @@ def load_model(input_shape, num_labels, axis=-1, base_filter=32, depth_size=4, s
             gating = InstanceNormalization(axis=axis)(gating)
             attention = Conv3D(filters, (2, 2, 2), strides=(2, 2, 2), use_bias=False, padding='valid')(skip_input)
             attention = InstanceNormalization(axis=axis)(attention)
-            attention = add([gating, attention])
+            attention = Add()([gating, attention])
             attention = Conv3D(1, (1, 1, 1), use_bias=False, padding='same', activation='sigmoid')(attention)
             # attention = Lambda(resize_by_axis, arguments={'dim_1':skip_input.get_shape().as_list()[1],'dim_2':skip_input.get_shape().as_list()[2],'ax':3})(attention) # error when None dimension is feeded.
             # attention = Lambda(resize_by_axis, arguments={'dim_1':skip_input.get_shape().as_list()[1],'dim_2':skip_input.get_shape().as_list()[3],'ax':2})(attention)
@@ -119,7 +76,7 @@ def load_model(input_shape, num_labels, axis=-1, base_filter=32, depth_size=4, s
             u2 = Multiply()([u2, se])
             shortcut = Conv3D(filters, (3, 3, 3), use_bias=False, padding='same')(u1)
             shortcut = InstanceNormalization(axis=axis)(shortcut)
-            u2 = add([u2, shortcut])
+            u2 = Add()([u2, shortcut])
         u2 = LeakyReLU(alpha=0.3)(u2)
         return u2
 
