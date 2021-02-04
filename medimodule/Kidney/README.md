@@ -1,43 +1,26 @@
 # Kidney 
-module 소개
+This **Liver** module consists of the following functions.
+- Kidney Tumor Segmentation
 
-### Results
-메인 README.md에 결과가 있다면 표를 추가해줍니다.
 
 ## Kidney and Tumor Segmentation
-submodule 소개
+The objective of this `Kidney and Tumor Segmentation` submodule is to get the kidney and tumor mask of arterial phase abdominal CT scans. 
 
 ### Inference
 ```python
-from medimodule.$MODULE import $SUBMODULE
+from medimodule.Kidney import KidneyTumorSegmentation
 
-module = $SUBMODULE()
+module = KidneyTumorSegmentation()
 
 # set the model with weight
-module.init('/path/model/weights')
+module.init(args.mode, args.weights)
 
 # get a result
-result = module.predict('/path/of/image')
+result = module.predict(args.mode, args.img)
 
 # get a kidney mask of the image
-mask = module.predict('path/of/kidney_MASK.nii')
+mask = module.predict(args.mode, args.img)
 ```
-> 만약 샘플 결과가 있다면 이미지를 추가해줍니다.
-
-### Weights
- - TODO
-
-
-
-# KiTS19_ACE
-KiTS 2019 challenge in MICCAI 2019  
-Team name : ACE (Asan Coreline Ensemble)  
-http://results.kits-challenge.org/miccai2019/manuscripts/sungchul7039_3.pdf
-  
-## Training
-- **TO DO**
-
-## Prediction
 All checkpoints are located in `checkpoint/`. Checkpoints used in challenges will be updated.
 - For searching ROI of kidney  
   `python evaluation.py --mode 1 --testset /path/testset`
@@ -49,3 +32,19 @@ All checkpoints are located in `checkpoint/`. Checkpoints used in challenges wil
   2_4 : model with focaldice loss, minmax scaling and using **ALL** kidney in CT.  
   2_5 : model with dice loss, normalization with tumor's mean and std and using **ALL** kidney in CT.  
   `python evaluation.py --mode 2_3 --testset /path/testset`
+
+<img src="main_1.png" width=500 height=480>| <img src="masked_2_2.png" width=500 height=480>
+
+
+### Weights
+Weights : https://github.com/mi2rl/private-code-house
+
+
+
+### Dataset : KiTS19_ACE
+KiTS 2019 challenge in MICCAI 2019 https://kits19.grand-challenge.org/ 
+
+Team name : ACE (Asan Coreline Ensemble)  
+http://results.kits-challenge.org/miccai2019/manuscripts/sungchul7039_3.pdf
+
+
