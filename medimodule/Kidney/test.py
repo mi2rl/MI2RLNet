@@ -1,76 +1,59 @@
-import numpy as np
-import cv2
-import argparse
 import os
 import sys
+import cv2
+import argparse
+import numpy as np
+import nibabel as nib
 
-import SimpleITK as sitk
+sys.path.append('../')
+
+from base import BaseModule
+from utils import Checker
+from Kidney import KidneyTumorSegmentation
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--mode', type=str, default=None)
-    parser.add_argument('--img', type=str, default=None)
-    parser.add_argument('--weights', type=str, default=None)
-    parser.add_argument('--save_path', type=str, default=None)
+    parser.add_argument('--mode',       type=str, default='1')
+    parser.add_argument('--img',        type=str, default=None)
+    parser.add_argument('--weights',    type=str, default=None)
+    parser.add_argument('--gpus',       type=str, default='-1')
     return parser.parse_args()
 
 
 def main(args):
-    ### For Preprocessing
-    dcm_path = os.path.abspath(args.img)
-
+    Checker.set_gpu(args.gpus, 'tf2')
+    img_path = args.img
+    tumor_segmentation = KidneyTumorSegmentation()
+    tumor_segmentation.init(args.mode, args.weights)
     
-    ### Age Regressor Example
-    if args.mode == 'age_regression':
-        from medimodule.Chest import AgeRegressor
-        age_regressor = AgeRegressor()
-        age_regressor.init(args.weights)
-        out = age_regressor.predict(dcm_path)
-        print(out)
+    if args.mode == '1':
+        result = tumor_segmentation.predict(args.mode, img_path)
+        x_nib = nib.load(img_path)
+        p_nib = nib.Nifti1Image(result[-1::-1], x_nib.affine)
+        nib.save(p_nib, os.path.join('./result', args.mode, 'prediction_'+img_path.split('_')[1][:5]+'.nii'))
 
+    else:
+        if args.mode == '2_1':
+            result = tumor_segmentation.predict(args.mode, img_path)
+            x_nib = nib.load(img_path)
+            p_nib = nib.Nifti1Image(result[-1::-1], x_nib.affine)
+            nib.save(p_nib, os.path.join('./result', args.mode, 'prediction_'+img_path.split('_')[1][:5]+'.nii'))
+        else:
+            result, spacing = tumor_segmentation.predict(args.mode, img_path)
+            img_pair = nib.Nifti1Pair(result, np.diag([-spacing[0], spacing[1], spacing[2], 1]))
+            nib.save(img_pair, os.path.join('./result', args.mode, 'prediction_'+img_path.split('_')[1][:5]+'.nii'))
 
-    ### Viewpoint Classifier Example (PA / Lateral / Others)
-    elif args.mode == 'viewpoint_classification':
-        from medimodule.Chest import ViewpointClassifier
-        view_classifier = ViewpointClassifier()
-        view_classifier.init(args.weights)
-        out = view_classifier.predict(dcm_path)
-        print(out)
-
-    ### Enhance Classifier Example (Non-Enhanced / Enhanced)
-    elif args.mode == 'enhance_classification':
-        from medimodule.Chest import EnhanceCTClassifier
-        enhanceCT_classifier = EnhanceCTClassifier()
-        enhanceCT_classifier.init(args.weights)
-        out = enhanceCT_classifier.predict(dcm_path)
-        print(out)
-
-    elif args.mode == 'polyp_segmentation':
-        from medimodule.Polyp import PolypSegmentation
-        polyp_seg = PolypSegmentation()
-        polyp_seg.init(args.weights)
-        out = polyp_seg.predict(dcm_path)
-        print(np.unique(out))
-    ### Example LR Detection (L / R)
-    elif args.mode == 'lr_detection':
-        from medimodule.Chest import ChestLRDetection
-        detection = ChestLRDetection()
-        detection.init(args.weights)
-        predict = detection.predict(args.img)
-        cv2.imwrite(args.save_path + 'output.png' ,predict)
-        print("Predict Done")
-        print("="*30)
-
-    ### MRA_BET Example 
-    elif args.mode == 'mra_bet':
-        from medimodule.Brain import MRA_BET
-        mra_bet = MRA_BET()
-        mra_bet.init(args.weights, gpu_num=3)
-        out = mra_bet.predict(dcm_path)
-        print(out)
-
+    print(result.shape, type(result))
+        
+        
 if __name__ == '__main__':
-   argv = parse_arguments(sys.argv[1:])
-   main(argv)
     
+    args = parse_arguments(sys.argv[1:])
+    if not os.path.isdir('./result'):
+        os.mkdir('./result')
+    if not os.path.isdir(os.path.join('./result', args.mode)):
+        os.mkdir(os.path.join('./result', args.mode))
+    main(args)
+    
+
