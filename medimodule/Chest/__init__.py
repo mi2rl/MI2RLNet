@@ -1,1 +1,1 @@
-from .module import AgeRegressor, ViewpointClassifier, EnhanceCTClassifier, ChestLRDetection
+from .module import ViewpointClassifier, EnhanceCTClassifier, ChestLRDetection
