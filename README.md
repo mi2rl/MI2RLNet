@@ -1,6 +1,6 @@
 # MI2RLNet
 
-This MI2RLNet is the hub of pretrained models in medical domain. 
+This MI2RLNet is the hub of pretrained models in the medical domain. 
 
 We hope MI2RLNet helps your downstream task.
 
