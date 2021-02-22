@@ -1,10 +1,12 @@
 # MI2RLNet
 
+<img src="./imgs/overall_architecture.png" width="70%" height="70%">
+
 This MI2RLNet is the hub of pretrained models in the medical domain. 
 
 We hope MI2RLNet helps your downstream task.
 
-![Screenshot from 2021-02-22 14-21-49](./imgs/overall_architecture.png)
+
 
 * **Organizing Team** : MI2RL, Asan Medical Center(AMC), Seoul, Republic of Korea
 
@@ -58,6 +60,43 @@ We hope MI2RLNet helps your downstream task.
 | Endoscopy | Colonoscopy | Polyp Detection             | -    | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Endoscopy) | [link](https://drive.google.com/file/d/1pwePgaYsDCAeNhHXvDgehP-4chQsAGtc/view?usp=sharing) | Pytorch   |
 | MR       | Brain       | MRA BET(Brain Extration Tool)          | DSC: 95.28 | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Brain) | - | Pytorch   |
 | MR       | Brain       | Black-blood Segmentation               | -         | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Brain) | -                                                            | TF 2.x    |
+
+
+
+## How can we use ?
+
+### Inference (Pytorch Style)
+
+```python
+# import the module you want to use
+from medimodule.Liver import LiverSegmentation
+
+# initialize the module
+module = LiverSegmentation()
+
+# set the model with its well-trained weight
+module.init('/path/for/liver/segmentation.h5')
+
+# get a result
+mask = module.predict('/path/of/liver.hdr')
+```
+
+
+
+### Transfer Learning (Pytorch Style)
+
+```python
+# construct your model
+net = model()
+
+# load dict
+net.load_state_dict('/path/for/your/model.pth')
+
+# training
+net.train()
+
+# add your train code
+```
 
 
 
