@@ -7,7 +7,6 @@ import nibabel as nib
 import cv2
 import scipy.ndimage as ndimage
 import torch
-# sys.path.append("../")
 
 from scipy.ndimage import zoom
 
