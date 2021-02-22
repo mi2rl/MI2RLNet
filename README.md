@@ -4,7 +4,7 @@ This MI2RLNet is the hub of pretrained models in medical domain.
 
 We hope MI2RLNet helps your downstream task.
 
-![Screenshot from 2021-02-22 14-21-49](./imgs/overall_architecture.png){width:50%, height:50%}
+![Screenshot from 2021-02-22 14-21-49](./imgs/overall_architecture.png)
 
 * **Organizing Team** : MI2RL, Asan Medical Center(AMC), Seoul, Republic of Korea
 
