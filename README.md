@@ -1,16 +1,27 @@
-# Private Code House
+# MI2RLNet
 
-* **Trello link** : https://trello.com/b/QFhmCEkV/mi2rl-codeteam
+This MI2RLNet is the hub of pretrained models in medical domain. 
+
+
+
 * **Contributor** 
+
   * Commiter : Kyuri Kim, Jiyeon Seo, Jooyoung Park, Mingyu Kim, Kyungjin Cho, Daeun Kim, Yoojin Nam.
   * Reviewer : Sungman Cho, Sungchul Kim.
-  * Data Maintainer : Miso Jang.
+  * Data Maintainer : Miso Jang, Namkug Kim.
     <br>
-  
+
 * **Docker images**
+
   * Dockerfille : tf > 2.x, Pytorch 1.x
+
   * Dockerfile_tf.1.15 : tf < 2.x, Pytorch 1.x
+
     <br>
+
+
+
+
 
 ## Contents
 
@@ -44,3 +55,9 @@
 | MR       | Brain       | Black-blood Segmentation               | -         | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Brain) | -                                                            | TF 2.x    |
 
 
+
+## Contributing
+
+If you'd like to contribute, or have any suggestions for these guidelines, you can contact us at namkugkim@gmail.com or open an issue on this GitHub repository.
+
+All contributions welcome! All content in this repository is licensed under the Apache 2.0 license.
