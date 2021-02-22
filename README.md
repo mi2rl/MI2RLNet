@@ -12,7 +12,7 @@ We hope MI2RLNet helps your downstream task.
 
 * **Contributor** 
 
-  * Commiter : Kyuri Kim, Jiyeon Seo, Jooyoung Park, Mingyu Kim, Kyungjin Cho, Daeun Kim, Yoojin Nam.
+  * Commiter : Kyuri Kim, Jiyeon Seo, Jooyoung Park, Mingyu Kim, Kyungjin Cho, Daeun Kim, Yujin Nam.
 
   * Reviewer : Sungman Cho, Sungchul Kim.
 
@@ -44,6 +44,7 @@ We hope MI2RLNet helps your downstream task.
 | CT        | Abdomen     | Liver Segmentation                     | AMC, LiTS 2017 (https://competitions.codalab.org/competitions/17094) |
 | Endoscopy | Colonoscopy | Polyp Detection                        | -                                                            |
 | MR        | Brain       | Brain Extraction                       | AMC                                                          |
+| MR        | Brain       | blackblood segmentation                | AMC                                                          |
 
 
 
@@ -59,7 +60,7 @@ We hope MI2RLNet helps your downstream task.
 | CT       | Abdomen | Liver Segmentation                     | DSC: 96.94 | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Liver) | [link](https://drive.google.com/file/d/1oaURDlhh4K7S39XjxnaZShyLeUqvtbLC/view?usp=sharing) | TF 2.x    |
 | Endoscopy | Colonoscopy | Polyp Detection             | -    | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Endoscopy) | [link](https://drive.google.com/file/d/1pwePgaYsDCAeNhHXvDgehP-4chQsAGtc/view?usp=sharing) | Pytorch   |
 | MR       | Brain       | MRA BET(Brain Extration Tool)          | DSC: 95.28 | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Brain) | - | Pytorch   |
-| MR       | Brain       | Black-blood Segmentation               | -         | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Brain) | -                                                            | TF 2.x    |
+| MR       | Brain       | Black-blood Segmentation               | DSC: 83.7  | [link](https://github.com/mi2rl/private-code-house/tree/master/medimodule/Brain) | [link](https://drive.google.com/file/d/1LMPveqQybGh9EJD9nL1JwPinbUDJjz_y/view?usp=sharing) | TF 2.x    |
 
 
 
