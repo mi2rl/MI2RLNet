@@ -14,7 +14,7 @@ from scipy.ndimage import zoom
 from base import BaseModule
 from Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
 from Brain.mri_bet.load_model import build_MRI_BET
-
+from utils import Checker
 
 class BlackbloodSegmentation(BaseModule):
     def init(self, weight_path):
