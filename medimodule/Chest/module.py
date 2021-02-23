@@ -4,9 +4,11 @@ import cv2
 import os
 import sys
 import SimpleITK as sitk
-from ..base import BaseModule
-from .viewpoint_classification.load_model import build_view_classifier
-from .enhance_classification.load_model import build_enhanceCT_classifier
+
+from medimodule.utils import Checker
+from medimodule.base import BaseModule
+from medimodule.Chest.models import build_view_classifier
+from medimodule.Chest.models import build_enhanceCT_classifier
 
 class ViewpointClassifier(BaseModule):
     """ Classify PA / Lateral / Others View """
