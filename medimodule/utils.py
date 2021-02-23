@@ -5,8 +5,21 @@ import sys
 import logging
 import warnings
 
+modules = {
+    'chest' : [
+        'lrmark_detection',
+        'viewpoint_classification',
+        'enhance_classification'
+    ],
+    'brain' : [
+        'mribet',
+        'mrabet',
+        'blackblood_segmentation'
+    ]
+}
 
 class Checker:
+
     @staticmethod
     def check_input_type(_input, _t):
         """
@@ -96,3 +109,9 @@ class Checker:
                         except RuntimeError as e:
                             # Memory growth must be set before GPUs have been initialized
                             print(e)
+    @staticmethod
+    def check_args(part, task):
+        if part not in modules.keys():
+            msg = 'part: {}, task:{} is not implemented, implemented modules (key: part, value: tasks) as follows :\n {}\n'.format(
+                part, task, modules)
+            raise NotImplementedError(msg)

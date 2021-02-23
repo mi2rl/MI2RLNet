@@ -7,16 +7,17 @@ import SimpleITK as sitk
 
 from medimodule.utils import Checker
 from medimodule.base import BaseModule
-from medimodule.Chest.models import build_view_classifier
-from medimodule.Chest.models import build_enhanceCT_classifier
+from medimodule.Chest.models import LRmarkDetection
+from medimodule.Chest.models import ViewClassifier
+from medimodule.Chest.models import EnhanceClassification
 
 class ViewpointClassifier(BaseModule):
     """ Classify PA / Lateral / Others View """
 
-    def init(self, weight_path):
-        self.model = build_view_classifier(weight_path)
+    def __init__(self, weight_path: str = None):
+        self.model = ViewClassifier(weight_path)
 
-    def _preprocessing(self, path):
+    def _preprocessing(self, path: str) -> np.array:
         """
         Image preprocessing for classifying Viewpoint
 
@@ -43,7 +44,7 @@ class ViewpointClassifier(BaseModule):
 
         return np_img
         
-    def predict(self, path):
+    def predict(self, path: str) -> int:
         """
         View Classification
 
@@ -66,11 +67,11 @@ from numpy import newaxis
 class EnhanceCTClassifier(BaseModule):
     """ Classify Enhanced CT vs Non-Enhanced CT """
 
-    def init(self, weight_path, in_ch=2):
+    def __init__(self, weight_path: str = None, in_ch: int = 2):
         self.in_ch = in_ch
-        self.model = build_enhanceCT_classifier(weight_path, self.in_ch)
+        self.model = ViewClassifier(weight_path, self.in_ch)
 
-    def _preprocessing(self, path):
+    def _preprocessing(self, path: str) -> np.array:
         """
         Image preprocessing for classifying Enhanced CT vs. Non-Enhanced CT
 
@@ -119,19 +120,18 @@ class EnhanceCTClassifier(BaseModule):
             raise
         return results
 
-    def predict(self, path):
+    def predict(self, path: str) -> str:
         img = self._preprocessing(path)
         pred = self.model.predict(img)
         out = np.argmax(pred)
         labels = ['Non-Enhanced', 'Enhanced']
         return labels[out]
 
-from .lr_detection.load_model import build_lr_detection
-from .lr_detection.utils.anchors import anchors_for_shape
-from .lr_detection.utils.post_process_boxes import post_process_boxes
+from medimodule.Chest.models.utils.anchors import anchors_for_shape
+from medimodule.Chest.models.utils.post_process_boxes import post_process_boxes
 
-class ChestLRDetection(BaseModule):
-    def init(self, weight_path):
+class ChestLRmarkDetection(BaseModule):
+    def __init__(self, weight_path: str = None):
         """
         Initialize the model with its weight.
         
@@ -139,15 +139,15 @@ class ChestLRDetection(BaseModule):
             (string) weight_path : model's weight path
         """
 
-        self.model = build_lr_detection(weight_path)
+        self.model = LRmarkDetection(weight_path)
         
-    def _preprocessing(self, path):
+    def _preprocessing(self, path: str) -> tuple:
         """
         Preprocess the image from the path
             - png : mean/SD scaling
         Args:
             (string) path : absolute path of image
-        Return:
+        Return: tuple
             (numpy ndarray) new_image : scaled image
             (numpy ndarray) src_image : origin_image
             (float) scale, offset_h, offset_w , image_size , h,w : scaled image informations
@@ -194,9 +194,9 @@ class ChestLRDetection(BaseModule):
                 new_image[..., i] -= mean[i]
                 new_image[..., i] /= std[i]
         
-        return new_image, scale, offset_h, offset_w , image_size , src_image, h,w
+        return (new_image, scale, offset_h, offset_w , image_size , src_image, h,w)
 
-    def predict(self, path):
+    def predict(self, path:str) -> np.array:
         """
         L,R Detection 
         Args:
@@ -208,7 +208,7 @@ class ChestLRDetection(BaseModule):
         classes = ['left','right']
         num_classes = len(classes)
         score_threshold = 0.85
-        image, scale, offset_h, offset_w ,image_size ,src_image,h,w= self._preprocessing(path)
+        (image, scale, offset_h, offset_w ,image_size ,src_image,h,w) = self._preprocessing(path)
         
         anchors = anchors_for_shape((image_size, image_size))
         predict = np.zeros((3,6),dtype=np.float32)

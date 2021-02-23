@@ -2,7 +2,7 @@ from tensorflow import keras
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.models import Model
 
-def enhance_classification(weight_path:str, in_ch:int) -> Model:
+def EnhanceClassification(weight_path:str, in_ch:int) -> Model:
     w, h, c = 256, 256, in_ch
     n_classes = 2
 

@@ -59,11 +59,29 @@ def BrainBlackBloodSegmentation(
     return image, mask
 
 
-def Chest():
-    pass
+def ChestLRmarkDetection(
+    task: str,
+    weight: str,
+    image_path: str,
+    save_path: Optional[str] = None,
+    gpus: str = "-1"
+) -> np.array:
+    """
+    """
+    from medimodule.Chest import ChestLRmarkDetection
+    Checker.check_input_type(image_path, ["png","jpg","bmp"])
+    Checker.set_gpu(gpu_idx=gpus, framework="tf2")
 
+    model = ChestLRmarkDetection(weight)
+    image = model.predict(
+        os.path.abspath(image_path),
+    )
+
+    return image
 
 def main(args):
+    Checker.check_args(args.part, args.task)
+    
     if args.part == "Brain":
         if args.task in ["mribet", "mrabet"]:
             BrainBET(
@@ -81,17 +99,33 @@ def main(args):
                 save_path=args.save_path,
                 gpus=args.gpus)
 
-        else:
-            raise ValueError("In Brain, bet or blackblood_segmentation must be choosed.")
-
     elif args.part == "Chest":
-        pass
+        if args.task == "lrmark_detection":
+            ChestLRmarkDetection(
+                task=args.task,
+                weight=args.weight,
+                image_path=args.image_path,
+                save_path=args.save_path,
+                gpus=args.gpus)
+        elif args.task == "viewpoint_classification":
+            ViewpointClassifier(
+                task=args.task,
+                weight=args.weight,
+                image_path=args.image_path,
+                save_path=args.save_path,
+                gpus=args.gpus)
+        elif args.task == "enhance_classification":
+            EnhanceCTClassification(
+                task=args.task,
+                weight=args.weight,
+                image_path=args.image_path,
+                save_path=args.save_path,
+                gpus=args.gpus)
+
     elif args.part == "Abdomen":
         pass
     elif args.part == "Colon":
         pass
-    else:
-        raise ValueError("Choose a specific part to be executed.")
 
 
 
