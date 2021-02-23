@@ -7,20 +7,19 @@ Brain Moduel Test Code
 import argparse
 import os
 import sys
-sys.path.append("../../")
 
 import numpy as np
 import cv2
 import SimpleITK as sitk
-from medimodule.utils import Checker
 import warnings
 import nibabel as nib
 
+
+sys.path.append(os.getcwd())
+from utils import Checker
+
 warnings.filterwarnings('ignore', '.*output shape of zoom.*')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-
-from utils import Checker
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
@@ -32,7 +31,8 @@ def parse_arguments(argv):
     parser.add_argument('--gpu', type=str, default=None)
     parser.add_argument('--save_mask', type=bool, default=False)
     parser.add_argument('--save_stripping', type=bool, default=False)
-    
+    parser.add_argument('--save_path',  type=str, default=None)
+
     return parser.parse_args()
 
 
@@ -64,7 +64,16 @@ def main(args):
         blackblood_segmentation = BlackbloodSegmentation()
         blackblood_segmentation.init(args.weights)
         out = blackblood_segmentation.predict(nii_path)
-        print(out.shape, type(out), out)
+        if args.save_path is not None:
+            temp2 = np.swapaxes(out, 1, 2)
+            temp2 = np.swapaxes(temp2, 0, 1)
+            temp2 = np.swapaxes(temp2, 1, 2)
+            mask_pair = nib.Nifti1Pair(temp2, np.diag([-blackblood_segmentation.space[0],
+                                                      blackblood_segmentation.space[1],
+                                                      blackblood_segmentation.space[2], 1]))
+            nib.save(mask_pair, args.save_path)
+        print(out.shape, type(out))
+
 
 if __name__ == '__main__':
     argv = parse_arguments(sys.argv[1:])

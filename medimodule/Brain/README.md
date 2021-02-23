@@ -9,7 +9,7 @@ This **Brain** module consists of the following functions.
 | --- | --- | --- | --- |
 | T1-weighted MRI | Brain | MRI BET | 93.35 (DSC%) |
 | MRA | Brain | MRI BET | - |
-| blackblood | Brain | Brain blackblood Segmentation | 0.837 |
+| blackblood | Brain | Brain blackblood Segmentation | 83.7 (DSC%)|
 
 
 &#160; 
