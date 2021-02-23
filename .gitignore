@@ -8,3 +8,6 @@ __pycache__/
 
 *.xml
 *.iml
+
+*.swp
+*.swo
