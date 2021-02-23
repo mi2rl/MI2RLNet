@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow.keras.backend as K
+from tensorflow import Tensor
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import MaxPool3D
 from tensorflow.keras.layers import Conv3D
@@ -11,12 +12,16 @@ from tensorflow_addons.layers import InstanceNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GaussianNoise
 
+from typing import List
 
-def build_blackblood_segmentation(
-    weight_path: str,
-    base_filter: int=32):
 
-    def conv3d(inputs, filters, downsizing=True, loop=2):
+def BBBSeg(base_filter: int = 32) -> Model:
+    def conv3d(
+        inputs: Tensor, 
+        filters: int, 
+        downsizing: bool = True, 
+        loop: int = 2) -> Tensor:
+
         if downsizing:
             inputs = MaxPool3D(pool_size=(2, 2, 2))(inputs)
         x = inputs
@@ -26,9 +31,14 @@ def build_blackblood_segmentation(
             x = Activation('relu')(x)
         return x
 
-    def upconv3d(inputs, skip_input, filters, loop=2):
-        def _crop_concat():
-            def crop(concat_layers):
+    def upconv3d(
+        inputs: Tensor, 
+        skip_input: Tensor, 
+        filters: int, 
+        loop: int = 2) -> Tensor:
+
+        def _crop_concat() -> Tensor:
+            def crop(concat_layers: List[Tensor]) -> K:
                 big, small = concat_layers
                 big_shape, small_shape = tf.shape(big), tf.shape(small)
                 sh, sw, sd = small_shape[1], small_shape[2], small_shape[3]
@@ -37,7 +47,6 @@ def build_blackblood_segmentation(
                 big_crop = big[:,:-dh,:-dw,:-dd,:]
                 return K.concatenate([small, big_crop], axis=-1)
             return Lambda(crop)
-
 
         x = ZeroPadding3D(((0, 1), (0, 1), (0, 1)))(inputs)
         x = Conv3DTranspose(filters, (2 ,2, 2), strides=(2, 2, 2), use_bias=False, padding='same')(x)
@@ -63,6 +72,5 @@ def build_blackblood_segmentation(
     img_output = Conv3D(2, (1, 1, 1), strides=(1, 1, 1), padding='same', activation='softmax')(u1)
 
     model = Model(img_input, img_output, name='unet')
-    model.load_weights(weight_path)
     return model
 

@@ -1,30 +1,34 @@
 import os
 import sys
-import SimpleITK as sitk
-import numpy as np
-import glob, os
-import nibabel as nib
 import cv2
+import glob
+import warnings
+import numpy as np
+import nibabel as nib
+import SimpleITK as sitk
 import scipy.ndimage as ndimage
+from typing import Tuple, Optional
+
 import torch
 
-from scipy.ndimage import zoom
+from medimodule.utils import Checker
+from medimodule.base import BaseModule
+from medimodule.Brain.models import MRIBET
+from medimodule.Brain.models import BBBSeg
 
-from base import BaseModule
-from Brain.blackblood_segmentation.models.load_model import build_blackblood_segmentation
-from Brain.mri_bet.load_model import build_MRI_BET
-from utils import Checker
 
 class BlackbloodSegmentation(BaseModule):
-    def init(self, weight_path):
+    def __init__(self, weight_path: str = None):
         """
         Initialize the model with its weight.
         Args:
             (string) weight_path : model's weight path
         """
-        self.model = build_blackblood_segmentation(weight_path)
+        self.model = BBBSeg()
+        if weight_path is not None:
+            self.model.load_weights(weight_path)
 
-    def _preprocessing(self, path):
+    def _preprocessing(self, path: str) -> np.array:
         """
         Preprocess the image from the path
         Args:
@@ -55,7 +59,6 @@ class BlackbloodSegmentation(BaseModule):
                 f'.{input_ext} format is not supported.')
 
         self.img_shape = image.shape
-        d, w, h = self.img_shape
 
         # normalize
         windowing_range = [-40., 120.]
@@ -67,7 +70,11 @@ class BlackbloodSegmentation(BaseModule):
         image = image[np.newaxis, ..., np.newaxis]
         return image
 
-    def predict(self, path, istogether=False):
+    def predict(
+        self, 
+        path: str, 
+        save_path: Optional[str] = None
+    ) -> Tuple[np.array, np.array]:
         """
         blackblood segmentation
         Args:
@@ -81,26 +88,44 @@ class BlackbloodSegmentation(BaseModule):
         mask = np.squeeze(self.model(image).numpy().argmax(axis=-1))
         mask_shape = mask.shape
         mask = ndimage.zoom(mask, [self.img_shape[0]/ mask_shape[0],
-                           self.img_shape[1]/ mask_shape[1],
-                           self.img_shape[2]/ mask_shape[2]],
-                    order=1, mode='constant').astype(np.uint8)
-        if istogether:
-            return (np.squeeze(image), mask)
-        return mask
+                                   self.img_shape[1]/ mask_shape[1],
+                                   self.img_shape[2]/ mask_shape[2]],
+                            order=1, mode='constant')
+        mask = mask.astype(np.uint8)
+
+        if save_path:
+            temp2 = np.swapaxes(mask, 1, 2)
+            temp2 = np.swapaxes(temp2, 0, 1)
+            temp2 = np.swapaxes(temp2, 1, 2)
+            mask_pair = nib.Nifti1Pair(temp2, np.diag([-self.space[0],
+                                                       self.space[1],
+                                                       self.space[2], 1]))
+            nib.save(mask_pair, save_path)
+
+        return (np.squeeze(image), mask)
 
 
 class MRI_BET(BaseModule):
-    def init(self, weight_path):
+    def __init__(self, weight_path: str = None):
         """
         Initialize the model with its weight.
 
         Args:
             (string) weight_path : model's weight path
         """
-        self.net = build_MRI_BET(weight_path)
+        self.model = MRIBET().cuda()
+        if weight_path is not None:
+            weight = torch.load(weight_path, map_location="cuda:0")
+            self.model.load_state_dict(weight["net"])
 
-
-    def _preprocessing(self, path, img_type, min_percent=40, max_percent=98.5, out_min=0, out_max=1):
+    def _preprocessing(
+        self, 
+        path: str, 
+        img_type: str, 
+        min_percent: float = 40., 
+        max_percent: float = 98.5, 
+        out_min: int = 0, 
+        out_max: int = 1) -> torch.Tensor:
         """
         Preprocess the image from the path
 
@@ -138,7 +163,7 @@ class MRI_BET(BaseModule):
         return data, read_data
 
 
-    def _postprocessing(self, data):
+    def _postprocessing(self, data: np.array) -> np.array:
         """
         Postprocess the predicted data to reduce FP:wq
 
@@ -150,7 +175,8 @@ class MRI_BET(BaseModule):
 
         # opening
         kernel = np.ones((5, 5), np.int8)
-        data = [cv2.morphologyEx(data[:, :, z], cv2.MORPH_OPEN, kernel) for z in range(data.shape[2])]
+        data = [cv2.morphologyEx(data[:, :, z], cv2.MORPH_OPEN, kernel) 
+                for z in range(data.shape[2])]
         data = np.transpose(np.asarray(data), (1, 2, 0))
 
         # FP reduction using ccl
@@ -161,22 +187,26 @@ class MRI_BET(BaseModule):
         data[remove_pixel] = 0
         data[data > 0] = 1
 
-        
         # fill hole
         data = ndimage.binary_fill_holes(data).astype(np.float32)
-
+        
         return data
 
 
-    def predict(self, path, img_type='T1', save_mask=False, save_stripping=False, thres=0.5):
+    def predict(
+        self, 
+        path: str, 
+        img_type: str = 'T1', 
+        save_path: Optional[str] = None, 
+        thres: float = 0.5
+    ) -> Tuple[np.array, np.array]:
         """
         Brain tissue segmentation
 
         Args:
             (string) path : absolute path of data
             (string) img_type : MRI modality type('T1' for T1-weighted MRI, 'MRA' for MR angiography) 
-            (bool) save_mask : Boolean type(True for saving binary BET mask. It will be saved in the same path as the input data)
-            (bool) save_stripping : Boolean type(True for saving skull-stripped brain image data. It will be saved in the same path as the input data)
+            (string) save_path : If save_path is set, the mask and the skull-stripped image will be saved.
             (float) thres : probability threshold to make a mask pixel white (default : 0.5)
         Return:
             (numpy ndarray) 3d brain tissue mask
@@ -184,28 +214,25 @@ class MRI_BET(BaseModule):
 
         data, read_data = self._preprocessing(path, img_type=img_type)
         
-        self.net.eval()
-        mask3d = np.zeros(np.squeeze(data).shape)
-        for z in range(mask3d.shape[2]):
-            output = self.net(data[:, :, :, :, z])
+        self.model.eval()
+        mask = np.zeros(np.squeeze(data).shape)
+        for z in range(mask.shape[2]):
+            output = self.model(data[:, :, :, :, z])
             output = torch.sigmoid(output)
             output = output.cpu().detach().numpy().squeeze()
-            mask3d[:, :, z] = np.where(output >= thres, 1, 0)
+            mask[:, :, z] = np.where(output >= thres, 1, 0)
 
-        mask3d = self._postprocessing(mask3d)
+        mask = self._postprocessing(mask)
+        mask = mask.astype(np.uint8)
 
-        if save_mask is True:
-            save_name = path.replace(".nii", "_mask.nii")
-            save_ = nib.Nifti1Image(mask3d, read_data.affine, read_data.header)
-            nib.save(save_, save_name)
-
-        if save_stripping is True:
-            save_name = path.replace(".nii", "_stripping.nii")
+        if save_path:
+            mask_save = nib.Nifti1Image(mask, read_data.affine, read_data.header)
+            nib.save(mask_save, save_path)
+            
             org_img = read_data.get_fdata()
-            save_ = nib.Nifti1Image(np.where(mask3d==1,org_img,0), 
-                                    read_data.affine, read_data.header)
-            nib.save(save_, save_name)
+            img_strip_save = nib.Nifti1Image(
+                np.where(mask == 1, org_img, 0), 
+                read_data.affine, read_data.header)
+            nib.save(img_strip_save, path.replace(".nii", "_stripped.nii"))
 
-        return mask3d
-
-
+        return (np.squeeze(data), mask)

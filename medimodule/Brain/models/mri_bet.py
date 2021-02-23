@@ -1,40 +1,47 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
+from typing import Optional
 
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels, mid_channels=None):
-        super().__init__()
+    def __init__(
+        self, 
+        in_channels: int, 
+        out_channels: int, 
+        mid_channels: Optional[int] = None):
+
+        super(DoubleConv, self).__init__()
         if not mid_channels:
             mid_channels = out_channels
+
         self.double_conv = nn.Sequential(
           nn.Conv2d(in_channels,mid_channels,kernel_size=3,padding=1),
           nn.BatchNorm2d(mid_channels),
           nn.ReLU(inplace=True),
           nn.Conv2d(mid_channels,out_channels,kernel_size=3,padding=1),
           nn.BatchNorm2d(out_channels),
-          nn.ReLU(inplace=True)
-        )
-    def forward(self, x):
+          nn.ReLU(inplace=True))
+
+    def forward(self, x: Tensor) -> Tensor:
         return self.double_conv(x)
 
 
 class Down(nn.Module):
-    def __init__(self, in_channels,out_channels):
-        super().__init__()
+    def __init__(self, in_channels: int, out_channels: int):
+        super(Down, self).__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            DoubleConv(in_channels,out_channels)
-        )
-    def forward(self, x):
+            DoubleConv(in_channels,out_channels))
+
+    def forward(self, x: Tensor) -> Tensor:
         return self.maxpool_conv(x)
 
 
 class Up(nn.Module):
-    def __init__(self, in_channels,out_channels, bilinear=True):
+    def __init__(self, in_channels: int, out_channels: int, bilinear: bool = True):
         super().__init__()
-
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
             self.conv = DoubleConv(in_channels, out_channels, in_channels//2)
@@ -42,7 +49,7 @@ class Up(nn.Module):
             self.up = nn.ConvTranspose2d(in_channels,in_channels//2, kernel_size=2, stride=2)
             self.conv = DoubleConv(in_channels,out_channels)
 
-    def forward(self, x1, x2):
+    def forward(self, x1: Tensor, x2: Tensor) -> Tensor:
         x1 = self.up(x1)
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
@@ -54,17 +61,23 @@ class Up(nn.Module):
 
 
 class OutConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels: int, out_channels: int):
         super(OutConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         
-    def forward(self,x):
+    def forward(self, x: Tensor) -> Tensor:
         return self.conv(x)
     
 
-class UNet(nn.Module):
-    def __init__(self, n_channels=1, n_classes=1, dims=64, bilinear=True):
-        super(UNet,self).__init__()
+class MRIBET(nn.Module):
+    def __init__(
+        self, 
+        n_channels: int = 1, 
+        n_classes: int = 1, 
+        dims: int = 64, 
+        bilinear: bool = True):
+
+        super(MRIBET, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
@@ -83,7 +96,7 @@ class UNet(nn.Module):
         self.up4 = Up(dims*2,dims, bilinear)
         self.Out = OutConv(dims, n_channels)
            
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x1 = self.In(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
@@ -95,4 +108,5 @@ class UNet(nn.Module):
         x = self.up3(x,x2)
         x = self.up4(x,x1)
         output = self.Out(x)
+        
         return output

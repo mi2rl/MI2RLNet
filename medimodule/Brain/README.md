@@ -7,9 +7,9 @@ This **Brain** module consists of the following functions.
 ### Results
 | Modality | Part | Module | Results |
 | --- | --- | --- | --- |
-| T1-weighted MRI | Brain | MRI BET | 93.35 (DSC%) |
-| MRA | Brain | MRI BET | - |
-| blackblood | Brain | Brain blackblood Segmentation | 83.7 (DSC%)|
+| T1-weighted MRI | Brain | MRI_BET | 93.4 (DSC) |
+| MRA | Brain | MRI_BET | 90.0 (DSC) |
+| blackblood | Brain | BlackbloodSegmentation | 83.7 (DSC)|
 
 
 &#160; 
@@ -21,40 +21,32 @@ This **Brain** module consists of the following functions.
 
 ```python
 ### MRI_BET Example 
-from medimodule.Brain.module import MRI_BET
 from medimodule.utils import Checker
-
-check = Checker()
-mri_bet = MRI_BET()
+from medimodule.Brain.module import MRI_BET
 
 # Check if the input data type is nifti(.nii)
-check.check_input_type('path/of/img.nii', 'nii')
+Checker.check_input_type("path/of/img.nii", "nii")
 
 # Allocate the gpu
-check.set_gpu(gpu_number, framework='pytorch')
+Checker.set_gpu(gpu_number, framework="pytorch")
 
 # Set the model with weight
 # Choose an appropriate weight according to the data modality
-mri_bet.init('path/of/weight.pth')
+model = MRI_BET("path/of/weight.pth")
 
 # Get a brain tissue mask of the input data
 # img_type : MRI modality(T1/MRA)
-# save_mask : set True if you want to save the binary bet mask
-# save_stripping : set True if you want to save the skull-stripped image
-mask = mri_bet.predict('path/input_img.nii', 
-                            img_type='T1',
-                            save_mask=True, 
-                            save_stripping=True) 
+# save_path : set if you want to save the mask and the skull-stripped image
+image, mask = model.predict("path/of/image.nii", 
+                            img_type="T1",
+                            save_path="path/for/save.nii")
 ```
 
-#### result of T1-weighted MRI BET
+#### Result of T1-weighted MRI BET
 <img src="imgs/mri_bet.png" width="100%"></img>
 
-#### result of MRA BET
+#### Result of MRA BET
 <img src="imgs/mra_bet.png" width="100%"></img>
-
-### Weights
-- TODO
 
 ### Reference
 - [UNet] - [code](https://github.com/milesial/Pytorch-UNet)
@@ -66,27 +58,23 @@ mask = mri_bet.predict('path/input_img.nii',
 
 ### Inference
 ```python
-from medimodule.Brain.module import BlackbloodSegmentation
 from medimodule.utils import Checker
+from medimodule.Brain.module import BlackbloodSegmentation
 
-check = Checker()
-blackblood = BlackbloodSegmentation()
+# Check if the input data type is nifti(.nii)
+Checker.check_input_type("path/of/img.nii", "nii")
 
-# check if the input is nifti file(.nii)
-check.check_input_type('path/of/img.nii', 'nii')
-# allocate the gpu
-check.set_gpu(gpu_idx, framework='tf2')
+# Allocate the gpu
+Checker.set_gpu(gpu_idx, framework="tf2")
 
 # set the model with weight
-blackblood.init('path/of/weight.h5')
+model = BlackbloodSegmentation("path/of/weight.h5")
 
 # get a blackblood mask of the image
-mask = blackblood.predict('/path/of/blackblood_mask.nii')
+# save_path : set if you want to save the mask
+image, mask = model.predict("path/of/image.nii", 
+                            save_path="path/for/save.nii")
 ```
 
 ### Sample
 <img src="imgs/blackblood.png" width="100%"></img>
-
-
-&#160;  
-## (Todo) Brain Aneurysm Segmentation
