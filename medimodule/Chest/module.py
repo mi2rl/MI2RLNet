@@ -1,23 +1,33 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
 import os
 import sys
+import cv2
+import pydicom
+import numpy as np
 import SimpleITK as sitk
+from typing import Tuple, Optional
 
 from medimodule.utils import Checker
 from medimodule.base import BaseModule
+from medimodule.Chest.models import LungSeg
 from medimodule.Chest.models import LRmarkDetection
 from medimodule.Chest.models import ViewClassifier
 from medimodule.Chest.models import EnhanceClassification
 
+from medimodule.Chest.models.utils.anchors import anchors_for_shape
+from medimodule.Chest.models.utils.post_process_boxes import post_process_boxes
+
+
 class ViewpointClassifier(BaseModule):
-    """ Classify PA / Lateral / Others View """
-
     def __init__(self, weight_path: str = None):
-        self.model = ViewClassifier(weight_path)
+        """
+        Classify PA / Lateral / Others View
+        """
+        
+        self.model = ViewClassifier()
+        if weight_path:
+            self.model.load_weights(weight_path)
 
-    def _preprocessing(self, path: str) -> np.array:
+    def _preprocessing(self, path: str) -> Tuple[np.array, np.array]:
         """
         Image preprocessing for classifying Viewpoint
 
@@ -26,25 +36,28 @@ class ViewpointClassifier(BaseModule):
         Return:
             (numpy ndarray) img 
         """
-        img = sitk.GetArrayFromImage(sitk.ReadImage(path))
-        img = img[0]
-
-        img = cv2.resize(img, (512,512), interpolation=cv2.INTER_LINEAR)
-
-        np_img = img.astype(np.float32)
-        np_img -= np.min(np_img)
-        np_img /= np.percentile(np_img, 99)
-
-        np_img[np_img>1] = 1
-        np_img *= (2**8-1)
-        np_img = np_img.astype(np.uint8)
         
-        # convert shape [b, h, w, c]
-        np_img = np.expand_dims(np.expand_dims(np_img, 0), -1)
+        imgo = np.squeeze(sitk.GetArrayFromImage(sitk.ReadImage(path)))
+        img = cv2.resize(imgo, (512, 512), interpolation=cv2.INTER_LINEAR)
 
-        return np_img
+        img = img.astype(np.float32)
+        img -= np.min(img)
+        img /= np.percentile(img, 99)
+
+        img[img > 1] = 1
+        img *= (2**8-1)
+        img = img.astype(np.uint8)
         
-    def predict(self, path: str) -> int:
+        img = img[None,...,None]
+
+        return imgo, img
+        
+    def predict(
+        self, 
+        path: str,
+        save_path: Optional[str] = None,
+        labels: List[str] = ['PA', 'Lateral', 'Others']
+    ) -> Tuple[np.array, str]:
         """
         View Classification
 
@@ -53,16 +66,13 @@ class ViewpointClassifier(BaseModule):
         Return:
             (int) age : age prediction result (Month)
         """
-        img = self._preprocessing(path)
-        pred = self.model.predict(img)
-        out = np.argmax(pred)
-        labels = ['PA', 'Lateral', 'Others']
-        return labels[out]
 
-import pydicom
-from pydicom import dcmread
-from pydicom.pixel_data_handlers import gdcm_handler
-from numpy import newaxis
+        imgo, img = self._preprocessing(path)
+        result = self.model.predict(img)
+        result = np.argmax(result)
+        
+        return (imgo, labels[result])
+
 
 class EnhanceCTClassifier(BaseModule):
     """ Classify Enhanced CT vs Non-Enhanced CT """
@@ -83,7 +93,7 @@ class EnhanceCTClassifier(BaseModule):
         # image size settings
         h, w, c = 256, 256, 2
         
-        ds = dcmread(path)
+        ds = pydicom.dcmread(path)
         
         # for JPEG Lossless, Nonhierarchical, First- Order Prediction
         if ds.file_meta.TransferSyntaxUID == '1.2.840.10008.1.2.4.70':
@@ -106,13 +116,13 @@ class EnhanceCTClassifier(BaseModule):
             tmp_img[tmp_img < 0] = 0.
             tmp_img[tmp_img > 1] = 1.
             tmp_img = cv2.resize(tmp_img, (h, w), interpolation = cv2.INTER_AREA)
-            tmp_img = tmp_img[:, :, newaxis]
+            tmp_img = tmp_img[:, :, None]
 
             tmp_img2[tmp_img2 == -2000] = 0.
             tmp_img2 -= (-1024. - intercept)
             tmp_img2 /= 4096
             tmp_img2 = cv2.resize(tmp_img2, (height, width), interpolation = cv2.INTER_AREA)
-            tmp_img2 = tmp_img2[:, :, newaxis]
+            tmp_img2 = tmp_img2[:, :, None]
 
             results = np.concatenate((tmp_img, tmp_img2), axis=2)
         except:
@@ -127,8 +137,6 @@ class EnhanceCTClassifier(BaseModule):
         labels = ['Non-Enhanced', 'Enhanced']
         return labels[out]
 
-from medimodule.Chest.models.utils.anchors import anchors_for_shape
-from medimodule.Chest.models.utils.post_process_boxes import post_process_boxes
 
 class ChestLRmarkDetection(BaseModule):
     def __init__(self, weight_path: str = None):
@@ -246,3 +254,112 @@ class ChestLRmarkDetection(BaseModule):
         return (src_image)
 
 
+class LungSegmentation(BaseModule):
+    def __init__(self, weight_path: Optional[str] = None):
+        """
+        Initialize the model with its weight.
+        
+        Args:
+            (string) weight_path : model's weight path
+        """
+        
+        # TODO: separate model and weights
+        self.model = LungSeg()
+        if weight_path:
+            self.model.load_weights(weight_path)
+
+    def _preprocessing(self, path: str) -> Tuple[np.array, np.array]:
+        """
+        Preprocess the image from the path
+        
+        Args:
+            (string) path : absolute path of image
+        Return:
+            (numpy ndarray) image
+        """
+        
+        if Checker.check_input_type_bool(path, 'dcm'):
+            raise ValueError(
+                '.dcm is not supported. '
+                'Please convert dcm format to image format, such as png or jpg.')
+            
+        imageo = cv2.imread(path, cv2.IMREAD_GRAYSCALE).astype(np.float32)
+        image = cv2.resize(imageo, (1024, 1024), interpolation=cv2.INTER_AREA)
+        if len(image.shape) == 2:
+            image = image[None,...,None]
+
+        image -= image.mean()
+        image /= image.std()
+
+        return imageo, image
+
+    def _postprocessing(self, mask: np.array) -> np.array:
+        assert len(mask.shape) == 4
+
+        batch_size = len(mask)
+        mask = mask.astype(np.uint8)
+        mask *= 255
+        kernel = np.ones((5, 5), np.uint8)
+
+        processed_imgs = []
+        for i in range(batch_size):
+            erosion = cv2.erode(mask[i], kernel, iterations=1)
+            dilation = cv2.dilate(erosion, kernel, iterations=1)
+            _, thresh = cv2.threshold(dilation, 127, 255, cv2.THRESH_BINARY)
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+            areas = []
+            for cnt in contours:
+                areas.append(cv2.contourArea(cnt))
+
+            if len(areas) == 0:
+                continue
+
+            areas = np.array(areas)
+            maxindex = np.argmax(areas)
+            areas[maxindex] = 0
+            secondmaxindex = np.argmax(areas)
+
+            for i, cnt in enumerate(contours):
+                if i != maxindex and i != secondmaxindex:
+                    cv2.drawContours(dilation, contours, i, color=(0, 0, 0), thickness=-1)
+
+            erosion = cv2.erode(dilation, kernel, iterations=1)
+            img_post = cv2.dilate(erosion, kernel, iterations=1)
+
+            if len(img_post.shape) < 3:
+                img_post = np.expand_dims(img_post, axis=-1)
+
+            img_post = np.stack(img_post, axis=0)
+            processed_imgs.append(img_post)
+
+        processed_imgs = np.array(processed_imgs, dtype=np.uint8)
+        processed_imgs /= 255
+
+        return processed_imgs
+    
+    def predict(
+        self, 
+        path: str,
+        save_path: Optional[str] = None
+    ) -> Tuple[np.array, np.array]:
+        """
+        Lung segmentation
+        
+        Args:
+            (string) path : image path
+            
+        Return:
+            (numpy ndarray) Lung mask with shape (width, height)
+        """
+
+        path = os.path.abspath(path)
+        imgo, img = self._preprocessing(path)
+            
+        mask = self.model.predict(img, batch_size=1)
+        mask = mask > 0.5
+        mask = self._postprocessing(mask)
+        if save_path:
+            cv2.imwrite(save_path, mask)
+
+        return (imgo, mask)

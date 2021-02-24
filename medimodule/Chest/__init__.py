@@ -1,1 +1,4 @@
-from .module import ViewpointClassifier, EnhanceCTClassifier, ChestLRDetection
+from .module import LungSegmentation
+from .module import ViewpointClassifier
+from .module import EnhanceCTClassifier
+from .module import ChestLRDetection

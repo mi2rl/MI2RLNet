@@ -1,3 +1,7 @@
+from .lung_segmentation import LungSeg
+from .viewpoint_classification import ViewClassifier
+
+
 import functools
 import tensorflow as tf
 import numpy as np

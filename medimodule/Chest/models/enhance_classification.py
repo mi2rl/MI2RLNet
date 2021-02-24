@@ -1,5 +1,6 @@
+import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.applications.resnet50 import ResNet50
+from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.models import Model
 
 def EnhanceClassification(weight_path:str, in_ch:int) -> Model:

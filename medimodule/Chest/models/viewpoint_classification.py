@@ -1,14 +1,19 @@
-from tensorflow import keras
-from tensorflow.keras.applications.resnet50 import ResNet50
+import tensorflow as tf
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Model
+from tensorflow.keras.applications import ResNet50
 
-def ViewClassifier(weight_path):
-    img_width, img_height = 512, 512
-    view_classes = 3
 
+def ViewClassifier(
+    img_height: int = 512,
+    img_width: int = 512,
+    view_classes: int = 3
+) -> Model:
+    
     model = ResNet50(input_shape=(img_width, img_height, 1), 
-                        weights=None, include_top=True)
-    output = keras.layers.Dense(view_classes, activation='softmax', name='final_layer')(model.output)
-    model = keras.models.Model(inputs=[model.input], outputs=[output])
-    model.load_weights(weight_path)
+                     weights=None, 
+                     include_top=True)
+    output = Dense(view_classes, activation='softmax', name='final_layer')(model.output)
+    model = Model(inputs=[model.input], outputs=[output])
 
     return model

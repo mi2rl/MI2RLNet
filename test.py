@@ -80,6 +80,28 @@ def ChestLRmarkDetection(
     return image
 
 
+def ChestLungSegmentation(
+    task: str,
+    weight: str,
+    image_path: str,
+    save_path: Optional[str] = None,
+    gpus: str = "-1"
+) -> Tuple[np.array, np.array]:
+    """
+    """
+
+    from medimodule.Chest import LungSegmentation
+    Checker.check_input_type(image_path, ["png", "jpg"])
+    Checker.set_gpu(gpu_idx=gpus, framework="tf")
+
+    model = LungSegmentation(weight)
+    image, mask = model.predict(
+        os.path.abspath(image_path),
+        save_path=save_path)
+
+    return image, mask
+
+
 def AbdomenLiverSegmentation(
     task: str,
     weight: str,
@@ -118,7 +140,9 @@ def main(args):
             BrainBlackBloodSegmentation(**input_kwargs)
 
     elif args.part == "Chest":
-        if args.task == "lrmark_detection":
+        if args.task == "lung_segmentation":
+            ChestLungSegmentation(**input_kwargs)
+        elif args.task == "lrmark_detection":
             ChestLRmarkDetection(**input_kwargs)
         elif args.task == "viewpoint_classification":
             ViewpointClassifier(**input_kwargs)
@@ -130,6 +154,7 @@ def main(args):
             AbdomenLiverSegmentation(**input_kwargs)
 
         elif args.task == "kidney_tumor_segmentation":
+            pass
             # AbdomenKidneyTumorSegmentation(**input_kwargs)
 
     elif args.part == "Colon":
