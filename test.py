@@ -49,7 +49,7 @@ def BrainBlackBloodSegmentation(
 
     from medimodule.Brain import BlackbloodSegmentation
     Checker.check_input_type(image_path, "nii")
-    Checker.set_gpu(gpu_idx=gpus, framework="tf2")
+    Checker.set_gpu(gpu_idx=gpus, framework="tf")
 
     model = BlackbloodSegmentation(weight)
     image, mask = model.predict(
@@ -69,8 +69,8 @@ def ChestLRmarkDetection(
     """
     """
     from medimodule.Chest import ChestLRmarkDetection
-    Checker.check_input_type(image_path, ["png","jpg","bmp"])
-    Checker.set_gpu(gpu_idx=gpus, framework="tf2")
+    Checker.check_input_type(image_path, ["png", "jpg", "bmp"])
+    Checker.set_gpu(gpu_idx=gpus, framework="tf")
 
     model = ChestLRmarkDetection(weight)
     image = model.predict(
@@ -79,51 +79,59 @@ def ChestLRmarkDetection(
 
     return image
 
+
+def AbdomenLiverSegmentation(
+    task: str,
+    weight: str,
+    image_path: str,
+    save_path: Optional[str] = None,
+    gpus: str = "-1"
+) -> Tuple[np.array, np.array]:
+    """
+    """
+
+    from medimodule.Liver import LiverSegmentation
+    Checker.check_input_type(image_path, ["hdr", "img", "nii"])
+    Checker.set_gpu(gpu_idx=gpus, framework="tf")
+
+    model = LiverSegmentation(weight)
+    image, mask = model.predict(
+        os.path.abspath(image_path),
+        save_path=save_path)
+
+    return image, mask
+
+
 def main(args):
     Checker.check_args(args.part, args.task)
+    input_kwargs = dict(
+        task=args.task,
+        weight=args.weight,
+        image_path=args.image_path,
+        save_path=args.save_path,
+        gpus=args.gpus)
     
     if args.part == "Brain":
         if args.task in ["mribet", "mrabet"]:
-            BrainBET(
-                task=args.task,
-                weight=args.weight,
-                image_path=args.image_path,
-                save_path=args.save_path,
-                gpus=args.gpus)
-                
+            BrainBET(**input_kwargs)
         elif args.task == "blackblood_segmentation":
-            BrainBlackBloodSegmentation(
-                task=args.task,
-                weight=args.weight,
-                image_path=args.image_path,
-                save_path=args.save_path,
-                gpus=args.gpus)
+            BrainBlackBloodSegmentation(**input_kwargs)
 
     elif args.part == "Chest":
         if args.task == "lrmark_detection":
-            ChestLRmarkDetection(
-                task=args.task,
-                weight=args.weight,
-                image_path=args.image_path,
-                save_path=args.save_path,
-                gpus=args.gpus)
+            ChestLRmarkDetection(**input_kwargs)
         elif args.task == "viewpoint_classification":
-            ViewpointClassifier(
-                task=args.task,
-                weight=args.weight,
-                image_path=args.image_path,
-                save_path=args.save_path,
-                gpus=args.gpus)
+            ViewpointClassifier(**input_kwargs)
         elif args.task == "enhance_classification":
-            EnhanceCTClassification(
-                task=args.task,
-                weight=args.weight,
-                image_path=args.image_path,
-                save_path=args.save_path,
-                gpus=args.gpus)
+            EnhanceCTClassification(**input_kwargs)
 
     elif args.part == "Abdomen":
-        pass
+        if args.task == "liver_segmentation":
+            AbdomenLiverSegmentation(**input_kwargs)
+
+        elif args.task == "kidney_tumor_segmentation":
+            # AbdomenKidneyTumorSegmentation(**input_kwargs)
+
     elif args.part == "Colon":
         pass
 

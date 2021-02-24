@@ -12,7 +12,7 @@ from medimodule.Liver.models import LiverSeg
 
 
 class LiverSegmentation(BaseModule):
-    def init(self, weight_path: Optional[str] = None):
+    def __init__(self, weight_path: Optional[str] = None):
         """
         Initialize the model with its weight.
         
@@ -60,7 +60,8 @@ class LiverSegmentation(BaseModule):
             self.space = [1., 1., 1.]
             warnings.warn(
                 '.npy is not recommended as an image format.'
-                'Since spacing cannot be identified from .npy, spacing is set as [1., 1., 1.].', 
+                'Since spacing cannot be identified from .npy, '
+                'spacing is set as [1., 1., 1.].', 
                 UserWarning)
 
         else:
@@ -69,10 +70,12 @@ class LiverSegmentation(BaseModule):
                 f'.{input_ext} format is not supported.')
 
         self.img_shape = image.shape
+        _, h, w = self.img_shape
 
         imageo = image.copy()
         image = zoom(
-            image, [self.space[-1]/5., 256./float(w), 256./float(h)], order=1, mode='constant')
+            image, [self.space[-1]/5., 256./float(w), 256./float(h)], 
+            order=1, mode='constant')
         image = np.clip(image, 10, 190)
         image = (image - mean_std[0]) / mean_std[1]
         image = image[np.newaxis,...,np.newaxis] # (1, d, w, h, 1)
