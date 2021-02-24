@@ -4,13 +4,11 @@
 # Title
 module 소개
 
-
-
 ### Results
 
 메인 README.md에 결과가 있다면 표를 추가해줍니다.
 
-
+<br>
 
 ## Submodule title
 
@@ -23,35 +21,25 @@ submodule 소개
 ```python
 from medimodule.$MODULE import $SUBMODULE
 
-module = $SUBMODULE()
+# Set the model with weight
+module = $SUBMODULE("path/of/weight")
 
-# set the model with weight
-module.init('/path/model/weights')
-
-# get a result
-result = module.predict('/path/of/image')
+# Get a result of the image
+image, mask = model.predict("path/of/image", 
+                            save_path="path/for/save")
 ```
 > 만약 샘플 결과가 있다면 이미지를 추가해줍니다.
 
 
 
-### Weights
-
-weights 링크
-
-
-
+<br>
 
 ## Submodule title
 
 ### Inference
 
-### Weightes
-
-
+<br>
 
 ## Submodule title
 
 ### Inference
-
-### Weightes
