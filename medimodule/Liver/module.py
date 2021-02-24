@@ -1,18 +1,18 @@
 import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
 import warnings
 import numpy as np
+import nibabel as nib
 import SimpleITK as sitk
 from scipy.ndimage import zoom
+from typing import Tuple, Optional
 
 from medimodule.utils import Checker
 from medimodule.base import BaseModule
-from medimodule.Liver.liver_segmentation.load_model import build_liver_segmentation
+from medimodule.Liver.models import LiverSeg
 
 
 class LiverSegmentation(BaseModule):
-    def init(self, weight_path):
+    def init(self, weight_path: Optional[str] = None):
         """
         Initialize the model with its weight.
         
@@ -20,9 +20,11 @@ class LiverSegmentation(BaseModule):
             (string) weight_path : model's weight path
         """
 
-        self.model = build_liver_segmentation(weight_path)
+        self.model = LiverSeg()
+        if weight_path is not None:
+            self.model.load_weights(weight_path)
 
-    def _preprocessing(self, path):
+    def _preprocessing(self, path: str) -> np.array:
         """
         Preprocess the image from the path
 
@@ -67,7 +69,6 @@ class LiverSegmentation(BaseModule):
                 f'.{input_ext} format is not supported.')
 
         self.img_shape = image.shape
-        d, w, h = self.img_shape
 
         imageo = image.copy()
         image = zoom(
@@ -77,7 +78,11 @@ class LiverSegmentation(BaseModule):
         image = image[np.newaxis,...,np.newaxis] # (1, d, w, h, 1)
         return imageo, image
 
-    def predict(self, path, istogether=False):
+    def predict(
+        self, 
+        path: str, 
+        save_path: Optional[str] = None
+    ) -> Tuple[np.array, np.array]:
         """
         Liver segmentation
 
@@ -97,6 +102,12 @@ class LiverSegmentation(BaseModule):
                            self.img_shape[1]/mask_shape[1], 
                            self.img_shape[2]/mask_shape[2]],
                     order=1, mode='constant').astype(np.uint8)
-        if istogether:
-            return (np.squeeze(imgo), mask)
-        return (mask)
+
+        if save_path:
+            temp2 = np.swapaxes(mask, 1, 2)
+            temp2 = np.swapaxes(temp2, 0, 1)
+            temp2 = np.swapaxes(temp2, 1, 2)
+            mask_pair = nib.Nifti1Pair(temp2, np.diag([-self.space[0], -self.space[1], 5., 1]))
+            nib.save(mask_pair, save_path)
+
+        return (np.squeeze(imgo), mask)

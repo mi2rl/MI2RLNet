@@ -30,11 +30,9 @@ We hope MI2RLNet helps your downstream task.
 
     <br>
 
-## Contents
+## **Contents**
 
-**Data description**
-
-
+### **Data description**
 
 | Modality  | Part        | Module                                 | Data Reference                                               |
 | --------- | ----------- | -------------------------------------- | ------------------------------------------------------------ |
@@ -44,13 +42,13 @@ We hope MI2RLNet helps your downstream task.
 | CT        | Chest       | Lung Segmentation                      | AMC                                                          |
 | CT        | Abdomen     | Kidnet & Tmuor Segmentation            | [KiTS 2019](https://kits19.grand-challenge.org/)              |
 | CT        | Abdomen     | Liver Segmentation                     | AMC, [LiTS 2017](https://competitions.codalab.org/competitions/17094) |
-| Endoscopy | Colonoscopy | Polyp Detection                        | -                                                            |
+| Endoscopy | Colon | Polyp Detection                        | [Kvsair-SEG](https://datasets.simula.no/kvasir-seg)                                                            |
 | MR        | Brain       | Brain Extraction                       | AMC                                                          |
 | MR        | Brain       | blackblood segmentation                | AMC                                                          |
 
 
 
-**Experiment results**
+### **Experiment results**
 
 | Modality | Part        | Module                                 | Results   | Wiki                                                         | Weights                                                      | Framework |
 | -------- | ----------- | -------------------------------------- | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ | --------- |
@@ -60,50 +58,48 @@ We hope MI2RLNet helps your downstream task.
 | CT       | Chest    | Lung Segmentation                      | DSC: 97.71 | -                                                            | [link](https://drive.google.com/file/d/1zvmXbn8f16pWaFNS-SCuGw95cyl989xE/view?usp=sharing) | TF 2.x    |
 | CT       | Abdomen | Kidney & Tumor Segmentation            | DSC: 83.07 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Kidney) | [link](https://drive.google.com/drive/folders/1lsMegnl5AeS90M7n1e-QYgYpr7vX-4yP?usp=sharing) | TF 2.x    |
 | CT       | Abdomen | Liver Segmentation                     | DSC: 96.94 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Liver) | [link](https://drive.google.com/file/d/1oaURDlhh4K7S39XjxnaZShyLeUqvtbLC/view?usp=sharing) | TF 2.x    |
-| Endoscopy | Colonoscopy | Polyp Detection             | DSC: 70.0 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Endoscopy) | [link](https://drive.google.com/file/d/1pwePgaYsDCAeNhHXvDgehP-4chQsAGtc/view?usp=sharing) | Pytorch   |
+| Endoscopy | Colon | Polyp Detection             | DSC: 70.0 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Endoscopy) | [link](https://drive.google.com/file/d/1pwePgaYsDCAeNhHXvDgehP-4chQsAGtc/view?usp=sharing) | Pytorch   |
 | MR       | Brain       | MRI/MRA BET(Brain Extration Tool)          | DSC: 95.28 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Brain) | [MRI](https://drive.google.com/file/d/1hditllnGF9PURJhqkN_wIUsM_cMv8_VM/view?usp=sharing) [MRA](https://drive.google.com/file/d/1JjzTaizHYouU0kQQMp4RYj3So9YLmoFT/view?usp=sharing) | Pytorch   |
 | MR       | Brain       | Black-blood Segmentation               | DSC: 83.7 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Brain) | [link](https://drive.google.com/file/d/1LMPveqQybGh9EJD9nL1JwPinbUDJjz_y/view?usp=sharing) | TF 2.x    |
 
+<br>
 
+## **How can we use ?**
 
-## How can we use ?
-
-### Inference (Pytorch Style)
+### **Inference**
 
 ```python
-# import the module you want to use
 from medimodule.Liver import LiverSegmentation
 
-# initialize the module
-module = LiverSegmentation()
+# Initialize the model.
+# If pre-trained weight exists, enter it together when the model is assigned.
+model = LiverSegmentation("/path/of/weight")
 
-# set the model with its well-trained weight
-module.init('/path/for/liver/segmentation.h5')
-
-# get a result
-mask = module.predict('/path/of/liver.hdr')
+# Get a result.
+# If you want to save the result, enter it with `save_path` kwargs.
+image, mask = model.predict("/path/of/image", save_path="/path/for/save")
 ```
 
 
 
-### Transfer Learning (Pytorch Style)
+### **Transfer Learning**
 
 ```python
-# construct your model
-net = model()
+# Import any module you want to fine-tune.
+from medimodule.$PART import $MODULE
 
-# load dict
-net.load_state_dict('/path/for/your/model.pth')
+# Initialize the model with pre-trained weight.
+model = $MODULE("/path/of/weight")
 
-# training
+# Construct your custom training code.
 ...
-net.train()
+model.train()
 ...
 ```
 
+<br>
 
-
-## Contributing
+## **Contributing**
 
 If you'd like to contribute, or have any suggestions for these guidelines, you can contact us at namkugkim@gmail.com or open an issue on this GitHub repository.
 
