@@ -2,14 +2,13 @@
 This **Brain** module consists of the following functions.
 -  MRI BET (Brain Extraction Tool for T1-wegithed MRI, MR angiography)
 -  Brain Blackblood segmentation
-- (TODO) Brain Aneurysm Segmentation
 
 ### Results
 | Modality | Part | Module | Results |
 | --- | --- | --- | --- |
-| T1-weighted MRI | Brain | MRI_BET | 93.4 (DSC) |
-| MRA | Brain | MRI_BET | 90.0 (DSC) |
-| blackblood | Brain | BlackbloodSegmentation | 83.7 (DSC)|
+| T1-weighted MRI | Brain | MRI_BET | 0.93 (DSC) |
+| MRA | Brain | MRI_BET | 0.90 (DSC) |
+| MRI | Brain | BlackbloodSegmentation | 0.83 (DSC)|
 
 
 &#160; 
@@ -20,33 +19,24 @@ This **Brain** module consists of the following functions.
 ### Inference
 
 ```python
-### MRI_BET Example 
-from medimodule.utils import Checker
 from medimodule.Brain.module import MRI_BET
 
-# Check if the input data type is nifti(.nii)
-Checker.check_input_type("path/of/img.nii", "nii")
-
-# Allocate the gpu
-Checker.set_gpu(gpu_number, framework="pytorch")
-
 # Set the model with weight
-# Choose an appropriate weight according to the data modality
-model = MRI_BET("path/of/weight.pth")
+model = MRI_BET("path/of/weight")
 
-# Get a brain tissue mask of the input data
+# Get a brain tissue mask of the image
 # img_type : MRI modality(T1/MRA)
 # save_path : set if you want to save the mask and the skull-stripped image
-image, mask = model.predict("path/of/image.nii", 
-                            img_type="T1",
-                            save_path="path/for/save.nii")
+image, mask = model.predict("path/of/image", 
+                            img_type="T1" or "MRA",
+                            save_path="path/for/save")
 ```
 
 #### Result of T1-weighted MRI BET
-<img src="imgs/mri_bet.png" width="100%"></img>
+![sample](imgs/mri_bet.png)
 
 #### Result of MRA BET
-<img src="imgs/mra_bet.png" width="100%"></img>
+![sample](imgs/mra_bet.png)
 
 ### Reference
 - [UNet] - [code](https://github.com/milesial/Pytorch-UNet)
@@ -58,23 +48,16 @@ image, mask = model.predict("path/of/image.nii",
 
 ### Inference
 ```python
-from medimodule.utils import Checker
 from medimodule.Brain.module import BlackbloodSegmentation
 
-# Check if the input data type is nifti(.nii)
-Checker.check_input_type("path/of/img.nii", "nii")
+# Set the model with weight
+model = BlackbloodSegmentation("path/of/weight")
 
-# Allocate the gpu
-Checker.set_gpu(gpu_idx, framework="tf2")
-
-# set the model with weight
-model = BlackbloodSegmentation("path/of/weight.h5")
-
-# get a blackblood mask of the image
+# Get a blackblood mask of the image
 # save_path : set if you want to save the mask
-image, mask = model.predict("path/of/image.nii", 
-                            save_path="path/for/save.nii")
+image, mask = model.predict("path/of/image", 
+                            save_path="path/for/save")
 ```
 
 ### Sample
-<img src="imgs/blackblood.png" width="100%"></img>
+![sample](imgs/blackblood.png)

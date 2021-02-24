@@ -61,7 +61,7 @@ class Checker:
             return False
 
     @staticmethod
-    def set_gpu(gpu_idx=None, framework=None):
+    def set_gpu(gpu_idx: str, framework: str):
         """
         Set specific device(s) and allow growth.
 
@@ -73,9 +73,7 @@ class Checker:
             If gpu is available, set the gpu
         """
 
-        assert gpu_idx is not None, 'gpu_idx must be selected.'
-        assert isinstance(gpu_idx, str)
-        assert framework is not None, 'framework must be selected.'
+        assert isinstance(gpu_idx, str), 'gpu_idx must be set to string format.'
         assert framework in ['tf', 'pytorch'], \
             'This module supports these frameworks, tf and pytorch.'
         

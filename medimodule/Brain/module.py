@@ -51,7 +51,7 @@ class BlackbloodSegmentation(BaseModule):
         elif Checker.check_input_type_bool(path, 'dcm'):
             raise ValueError(
                 '.dcm is not supported.'
-                'Please convert dcm dummies to analyze format.')
+                'Please convert dcm dummies to nii format.')
 
         else:
             input_ext = path.split('.')[-1]

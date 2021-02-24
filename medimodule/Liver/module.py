@@ -24,7 +24,7 @@ class LiverSegmentation(BaseModule):
         if weight_path is not None:
             self.model.load_weights(weight_path)
 
-    def _preprocessing(self, path: str) -> np.array:
+    def _preprocessing(self, path: str) -> Tuple[np.array, np.array]:
         """
         Preprocess the image from the path
 

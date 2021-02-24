@@ -1,18 +1,41 @@
 # Chest
 This **Chest** module consists of the following functions.
+- Lung Segmentation
 - L,R Mark Detection
 - PA / Lateral / Others Classification
 - Contrast / Non-Contrast Classification
   
 
 ### Results
-| Modality  | Module | Results |
-| ---  | --- | --- |
-| X-ray  | Chest L,R Mark Detection | b0 mAP:99.28% |
-| X-ray | PA / Lateral / Others Classification | Acc: 94% (extra validation) |
-| CT | Contrast / Non-Contrast Classification | Acc: 96% (extra validation) |
+| Modality  | Part | Module | Results |
+| ---  | --- | --- | --- |
+| X-ray | Chest | Lung Segmentation | 0.97 (DSC) |
+| X-ray | Chest | L,R Mark Detection | 0.99 (mAP) |
+| X-ray | Chest | PA / Lateral / Others Classification | 0.94 (Acc) |
+| CT | Chest | Contrast / Non-Contrast Classification | 0.96 (Acc) |
 
+<br>
 
+## Lung Segmentation
+- The objective of this `lung segmentation` is to get the lung mask in chext x-ray.
+
+### Inference
+
+```python
+from medimodule.Chest import LungSegmentation
+
+# Set the model with weight
+model = LungSegmentation("path/of/weight")
+
+# Get a lung mask of the image
+image, mask = model.predict("path/of/image", 
+                            save_path="path/for/save")
+```
+
+### Sample
+![sample](imgs/lung_sample.png)
+
+<br>
 
 ## Chest L,R Mark Detection
 
