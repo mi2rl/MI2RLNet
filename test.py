@@ -65,19 +65,64 @@ def ChestLRmarkDetection(
     image_path: str,
     save_path: Optional[str] = None,
     gpus: str = "-1"
-) -> np.array:
+) -> Tuple[np.array, dict]:
     """
     """
-    from medimodule.Chest import ChestLRmarkDetection
+
+    from medimodule.Chest import LRmarkDetection
     Checker.check_input_type(image_path, ["png", "jpg", "bmp"])
     Checker.set_gpu(gpu_idx=gpus, framework="tf")
 
-    model = ChestLRmarkDetection(weight)
-    image = model.predict(
+    model = LRmarkDetection(weight)
+    image, result = model.predict(
         os.path.abspath(image_path),
-    )
+        save_path=save_path)
 
-    return image
+    return image, result
+
+
+def ChestViewpointClassifier(
+    task: str,
+    weight: str,
+    image_path: str,
+    save_path: Optional[str] = None,
+    gpus: str = "-1"
+) -> Tuple[np.array, str]:
+    """
+    """
+
+    from medimodule.Chest import ViewpointClassifier
+    Checker.check_input_type(image_path, ["dcm"])
+    Checker.set_gpu(gpu_idx=gpus, framework="tf")
+
+    model = ViewpointClassifier(weight)
+    image, result = model.predict(
+        os.path.abspath(image_path),
+        save_path=save_path)
+
+    return image, result
+
+
+def ChestEnhanceCTClassification(
+    task: str,
+    weight: str,
+    image_path: str,
+    save_path: Optional[str] = None,
+    gpus: str = "-1"
+) -> Tuple[np.array, str]:
+    """
+    """
+
+    from medimodule.Chest import EnhanceCTClassifier
+    Checker.check_input_type(image_path, ["dcm"])
+    Checker.set_gpu(gpu_idx=gpus, framework="tf")
+
+    model = EnhanceCTClassifier(weight)
+    image, result = model.predict(
+        os.path.abspath(image_path),
+        save_path=save_path)
+
+    return image, result
 
 
 def ChestLungSegmentation(
@@ -145,9 +190,9 @@ def main(args):
         elif args.task == "lrmark_detection":
             ChestLRmarkDetection(**input_kwargs)
         elif args.task == "viewpoint_classification":
-            ViewpointClassifier(**input_kwargs)
+            ChestViewpointClassifier(**input_kwargs)
         elif args.task == "enhance_classification":
-            EnhanceCTClassification(**input_kwargs)
+            ChestEnhanceCTClassification(**input_kwargs)
 
     elif args.part == "Abdomen":
         if args.task == "liver_segmentation":

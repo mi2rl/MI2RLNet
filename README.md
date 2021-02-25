@@ -24,9 +24,7 @@ We hope MI2RLNet helps your downstream task.
 
 * **Docker images**
 
-  * Dockerfille : tf > 2.x, Pytorch 1.x
-
-  * Dockerfile_tf.1.15 : tf < 2.x, Pytorch 1.x
+  * Dockerfille : tensorflow > 2.x, Pytorch 1.x
 
     <br>
 
@@ -52,9 +50,9 @@ We hope MI2RLNet helps your downstream task.
 
 | Modality | Part        | Module                                 | Results   | Wiki                                                         | Weights                                                      | Framework |
 | -------- | ----------- | -------------------------------------- | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ | --------- |
-| X-ray    | Chest       | L/R Mark Detection                     | mAP: 99.28 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Chest) | [link](https://drive.google.com/file/d/1WbZbDYDx7KxqhufiXh1u54q0DjZbYuew/view?usp=sharing) | TF <1.15  |
-| X-ray    | Chest       | PA / Lateral / Others Classification   | Acc: 94.0 (external) | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Chest) | [link](https://drive.google.com/file/d/1iCa-iwrek-efn_zSmFNrxdP5q_UOYuoK/view?usp=sharing) | Keras     |
-| CT       | Chest       | Enhanced / Non-Enhanced Classification | Acc: 96.0 (external) | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Chest) | [link](https://drive.google.com/file/d/15S494ac3pUJSD6vEMJlSRi0Y42iM2OoG/view?usp=sharing) | Keras     |
+| X-ray    | Chest       | L/R Mark Detection                     | mAP: 99.28 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Chest) | [link](https://drive.google.com/file/d/1WbZbDYDx7KxqhufiXh1u54q0DjZbYuew/view?usp=sharing) | TF 2.x  |
+| X-ray    | Chest       | PA / Lateral / Others Classification   | Acc: 94.0 (external) | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Chest) | [link](https://drive.google.com/file/d/1iCa-iwrek-efn_zSmFNrxdP5q_UOYuoK/view?usp=sharing) | TF 2.x     |
+| CT       | Chest       | Enhanced / Non-Enhanced Classification | Acc: 96.0 (external) | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Chest) | [link](https://drive.google.com/file/d/15S494ac3pUJSD6vEMJlSRi0Y42iM2OoG/view?usp=sharing) | TF 2.x     |
 | CT       | Chest    | Lung Segmentation                      | DSC: 97.71 | -                                                            | [link](https://drive.google.com/file/d/1zvmXbn8f16pWaFNS-SCuGw95cyl989xE/view?usp=sharing) | TF 2.x    |
 | CT       | Abdomen | Kidney & Tumor Segmentation            | DSC: 83.07 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Kidney) | [link](https://drive.google.com/drive/folders/1lsMegnl5AeS90M7n1e-QYgYpr7vX-4yP?usp=sharing) | TF 2.x    |
 | CT       | Abdomen | Liver Segmentation                     | DSC: 96.94 | [link](https://github.com/mi2rl/MI2RLNet/tree/master/medimodule/Liver) | [link](https://drive.google.com/file/d/1oaURDlhh4K7S39XjxnaZShyLeUqvtbLC/view?usp=sharing) | TF 2.x    |

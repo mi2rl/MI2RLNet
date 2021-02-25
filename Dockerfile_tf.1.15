@@ -1,3 +1,0 @@
-FROM mi2rl/mi2rl_image:201130_tf1.15.0
-
-ENV DEBIAN_FRONTEND=noninteractive
