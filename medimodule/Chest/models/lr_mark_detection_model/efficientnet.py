@@ -33,10 +33,8 @@ import string
 import collections
 import numpy as np
 
-from six.moves import xrange
-from keras_applications.imagenet_utils import _obtain_input_shape
-from keras_applications.imagenet_utils import decode_predictions
-from keras_applications.imagenet_utils import preprocess_input as _preprocess_input
+from tensorflow.python.keras.applications.imagenet_utils import obtain_input_shape as _obtain_input_shape
+from tensorflow.python.keras.applications.imagenet_utils import preprocess_input as _preprocess_input
 from . import *
 
 BlockArgs = collections.namedtuple('BlockArgs', [
@@ -335,7 +333,7 @@ def EfficientNet(width_coefficient,
             block_args = block_args._replace(
                 input_filters=block_args.output_filters, strides=[1, 1])
             # pylint: enable=protected-access
-            for bidx in xrange(block_args.num_repeat - 1):
+            for bidx in range(block_args.num_repeat - 1):
                 drop_rate = drop_connect_rate * float(block_num) / num_blocks_total
                 block_prefix = 'block{}{}_'.format(
                     idx + 1,

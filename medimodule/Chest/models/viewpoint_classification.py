@@ -4,7 +4,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.applications import ResNet50
 
 
-def ViewClassifier(
+def ViewCls(
     img_height: int = 512,
     img_width: int = 512,
     view_classes: int = 3
