@@ -157,11 +157,33 @@ def AbdomenLiverSegmentation(
     """
     """
 
-    from medimodule.Liver import LiverSegmentation
+    from medimodule.Abdomen import LiverSegmentation
     Checker.check_input_type(image_path, ["hdr", "img", "nii"])
     Checker.set_gpu(gpu_idx=gpus, framework="tf")
 
     model = LiverSegmentation(weight)
+    image, mask = model.predict(
+        os.path.abspath(image_path),
+        save_path=save_path)
+
+    return image, mask
+
+
+def AbdomenPolypDetection(
+    task: str,
+    weight: str,
+    image_path: str,
+    save_path: Optional[str] = None,
+    gpus: str = "-1"
+) -> Tuple[np.array, np.array]:
+    """
+    """
+
+    from medimodule.Abdomen import PolypDetection
+    Checker.check_input_type(image_path, ["png", "jpg"])
+    Checker.set_gpu(gpu_idx=gpus, framework="pytorch")
+
+    model = PolypDetection(weight)
     image, mask = model.predict(
         os.path.abspath(image_path),
         save_path=save_path)
@@ -180,37 +202,37 @@ def main(args):
     
     if args.part == "Brain":
         if args.task in ["mribet", "mrabet"]:
-            BrainBET(**input_kwargs)
+            results = BrainBET(**input_kwargs)
         elif args.task == "blackblood_segmentation":
-            BrainBlackBloodSegmentation(**input_kwargs)
+            results = BrainBlackBloodSegmentation(**input_kwargs)
 
     elif args.part == "Chest":
         if args.task == "lung_segmentation":
-            ChestLungSegmentation(**input_kwargs)
+            results = ChestLungSegmentation(**input_kwargs)
         elif args.task == "lrmark_detection":
-            ChestLRmarkDetection(**input_kwargs)
+            results = ChestLRmarkDetection(**input_kwargs)
         elif args.task == "viewpoint_classification":
-            ChestViewpointClassifier(**input_kwargs)
+            results = ChestViewpointClassifier(**input_kwargs)
         elif args.task == "enhance_classification":
-            ChestEnhanceCTClassification(**input_kwargs)
+            results = ChestEnhanceCTClassification(**input_kwargs)
 
     elif args.part == "Abdomen":
         if args.task == "liver_segmentation":
-            AbdomenLiverSegmentation(**input_kwargs)
+            results = AbdomenLiverSegmentation(**input_kwargs)
 
         elif args.task == "kidney_tumor_segmentation":
             pass
             # AbdomenKidneyTumorSegmentation(**input_kwargs)
 
-    elif args.part == "Colon":
-        pass
+        elif args.task == "polyp_detection":
+            results = AbdomenPolypDetection(**input_kwargs)
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--part",       type=str,   default=None, required=True,
-                        help="[Brain / Chest / Abdomen / Colon]")
+                        help="[Brain / Chest / Abdomen]")
     parser.add_argument("--task",       type=str,   default=None, required=True,
                         help="Choose a specific part to be executed.")
     parser.add_argument("--weight",     type=str,   default=None)

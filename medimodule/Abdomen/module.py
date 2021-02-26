@@ -1,4 +1,5 @@
 import os
+import cv2
 import warnings
 import numpy as np
 import nibabel as nib
@@ -6,9 +7,12 @@ import SimpleITK as sitk
 from scipy.ndimage import zoom
 from typing import Tuple, Optional
 
+import torch
+
 from medimodule.utils import Checker
 from medimodule.base import BaseModule
-from medimodule.Liver.models import LiverSeg
+from medimodule.Abdomen.models import LiverSeg
+from medimodule.Abdomen.models import PolypDet
 
 
 class LiverSegmentation(BaseModule):
@@ -88,9 +92,9 @@ class LiverSegmentation(BaseModule):
     ) -> Tuple[np.array, np.array]:
         """
         Liver segmentation
-
         Args:
             (string) path : image path (hdr/img, nii, npy)
+            (string) save_path : 
             (bool) istogether: with image which was used or not
 
         Return:
@@ -114,3 +118,66 @@ class LiverSegmentation(BaseModule):
             nib.save(mask_pair, save_path)
 
         return (np.squeeze(imgo), mask)
+
+
+class PolypDetection(BaseModule):
+    def __init__(self, weight_path: Optional[str] = None):
+        """
+        Initialize the model with its weight.
+        
+        Args:
+            (string) weight_path : model's weight path
+        """
+
+        self.model = PolypDet()
+        if weight_path:
+            weight = torch.load(weight_path, map_location="cpu")
+            self.model.load_state_dict(weight["net"])
+
+    def _preprocessing(self, path: str) -> Tuple[np.array, np.array]:
+        """
+        Preprocess the image from the path
+        Args:
+            (string) path : absolute path of image
+        Return:
+            (numpy ndarray) image
+        """
+        
+        imageo = cv2.imread(path)
+        image = cv2.resize(imageo, (512, 512)).astype(np.float32)
+        image /= 255.
+        image = image.transpose((2, 0, 1))
+        image = np.expand_dims(image, axis=0)
+        image = torch.from_numpy(image)
+        return imageo, image
+
+    def predict(
+        self, 
+        path: str, 
+        save_path: Optional[str] = None, 
+        thresh: float = 0.7
+    ) -> Tuple[np.array, np.array]:
+        """
+        Liver segmentation
+        Args:
+            (string) path : image path
+            (string) save_path : 
+            (bool) thresh : the value of pixel which you will start to use as polyp Lesions(0 ~ 1). 
+                            if it is 0.7, the pixel which has value under 0.7 won't be used as Lesion pixel.
+        Return:
+            (numpy ndarray) polyp mask with shape (width, height)
+        """
+
+        fn_thresh = lambda x, thresh :  1.0 * (x > thresh)
+
+        imgo, img = self._preprocessing(path)
+        mask = self.model(img) 
+        mask = fn_thresh(mask, thresh)
+        mask = np.squeeze(mask.numpy())
+        mask = cv2.resize(mask, imgo.shape[:2])
+        mask = mask.astype(np.uint8)
+        
+        if save_path:
+            cv2.imwrite(save_path, mask * 255)
+
+        return imgo, mask
