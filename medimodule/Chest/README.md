@@ -5,7 +5,7 @@ This **Chest** module consists of the following functions.
 - PA / Lateral / Others Classification
 - Contrast / Non-Contrast Classification
   
-### Results
+## Results
 | Modality  | Part | Module | Results |
 | ---  | --- | --- | --- |
 | X-ray | Chest | Lung Segmentation | 0.97 (DSC) |
@@ -15,8 +15,9 @@ This **Chest** module consists of the following functions.
 
 <br>
 
+---
 ## Lung Segmentation
-- The objective of `lung segmentation` is to get the lung mask in chext x-ray.
+- The objective of `Lung Segmentation` is to get the lung mask in chext x-ray.
 
 ### Inference
 ```python
@@ -35,6 +36,7 @@ image, mask = model.predict("path/of/image", save_path="path/for/save")
 
 <br>
 
+---
 ## L,R Mark Detection
 - The objective of `L,R Mark Detection` is to get the prediction box about L or R mark in chest X-ray.
 
@@ -58,6 +60,7 @@ image, result = model.predict("path/of/image", save_path="path/for/save")
 
 <br>
 
+---
 ## Enhanced / Non-Enhanced Classification  
 - The objective of `Enhanced CT Classification` is to identify whether enhanced CT or not in lung CT slices.
 
@@ -81,6 +84,7 @@ image, result = model.predict("path/of/image", save_path="path/for/save")
 
 <br>
 
+---
 ## PA / Lateral / Others Classification  
 - The objective of `PA / Lateral / Others Classification` is to classify PA, Lateral, and others in chest X-ray.
 

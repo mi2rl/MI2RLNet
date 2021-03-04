@@ -3,7 +3,7 @@ This **Brain** module consists of the following functions.
 -  MRI BET (Brain Extraction Tool for T1-wegithed MRI, MR angiography)
 -  Brain Blackblood segmentation
 
-### Results
+## Results
 | Modality | Part | Module | Results |
 | --- | --- | --- | --- |
 | T1-weighted MRI | Brain | MRI_BET | 0.93 (DSC) |
@@ -32,11 +32,11 @@ image, mask = model.predict("path/of/image",
                             save_path="path/for/save")
 ```
 
-#### Result of T1-weighted MRI BET
-![sample](imgs/mri_bet.png)
+#### Sample of T1-weighted MRI BET
+<img src="imgs/mri_bet.png" width="100%"></img>
 
-#### Result of MRA BET
-![sample](imgs/mra_bet.png)
+#### Sample of MRA BET
+<img src="imgs/mra_bet.png" width="100%"></img>
 
 ### Reference
 - [UNet] - [code](https://github.com/milesial/Pytorch-UNet)
@@ -44,7 +44,7 @@ image, mask = model.predict("path/of/image",
 
 &#160;  
 ## Blackblood Segmentation
-- The objective of this `blackblood segmentation` is to get the black blood vessel in brain MRI.
+- The objective of `blackblood segmentation` is to get the black blood vessel in brain MRI.
 
 ### Inference
 ```python
@@ -60,4 +60,4 @@ image, mask = model.predict("path/of/image",
 ```
 
 ### Sample
-![sample](imgs/blackblood.png)
+<img src="imgs/blackblood.png" width="100%"></img>
