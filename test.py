@@ -169,6 +169,28 @@ def AbdomenLiverSegmentation(
     return image, mask
 
 
+def AbdomenKidneyTumorSegmentation(
+    task: str,
+    weight: str,
+    image_path: str,
+    save_path: Optional[str] = None,
+    gpus: str = "-1"
+) -> Tuple[np.array, np.array]:
+    """
+    """
+
+    from medimodule.Abdomen import KidneyTumorSegmentation
+    Checker.check_input_type(image_path, ["nii"])
+    Checker.set_gpu(gpu_idx=gpus, framework="tf")
+
+    model = KidneyTumorSegmentation(weight)
+    image, mask = model.predict(
+        os.path.abspath(image_path),
+        save_path=save_path)
+
+    return image, mask
+
+
 def AbdomenPolypDetection(
     task: str,
     weight: str,
@@ -193,6 +215,9 @@ def AbdomenPolypDetection(
 
 def main(args):
     Checker.check_args(args.part, args.task)
+    if len(args.weight) == 1 and args.task != "kidney_tumor_segmentation":
+        args.weight = args.weight[0]
+    
     input_kwargs = dict(
         task=args.task,
         weight=args.weight,
@@ -221,8 +246,7 @@ def main(args):
             results = AbdomenLiverSegmentation(**input_kwargs)
 
         elif args.task == "kidney_tumor_segmentation":
-            pass
-            # AbdomenKidneyTumorSegmentation(**input_kwargs)
+            results = AbdomenKidneyTumorSegmentation(**input_kwargs)
 
         elif args.task == "polyp_detection":
             results = AbdomenPolypDetection(**input_kwargs)
@@ -231,12 +255,12 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--part",       type=str,   default=None, required=True,
+    parser.add_argument("--part",       type=str,   default=None,   required=True,
                         help="[Brain / Chest / Abdomen]")
-    parser.add_argument("--task",       type=str,   default=None, required=True,
+    parser.add_argument("--task",       type=str,   default=None,   required=True,
                         help="Choose a specific part to be executed.")
-    parser.add_argument("--weight",     type=str,   default=None)
-    parser.add_argument("--image_path", type=str,   default=None, required=True)
+    parser.add_argument("--weight",     type=str,   default=None,   nargs="+")
+    parser.add_argument("--image_path", type=str,   default=None,   required=True)
     parser.add_argument("--save_path",  type=str,   default=None)
     parser.add_argument("--gpus",       type=str,   default="-1")
 

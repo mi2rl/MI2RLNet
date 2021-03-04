@@ -43,9 +43,13 @@ image, mask = model.predict("path/of/image",
 from medimodule.Abdomen import KidneyTumorSegmentation
 
 # Set the model with weight
+# weight is set to List about 6 models
+# -> [1, 2_1, 2_2, 2_3, 2_4, 2_5]
 model = KidneyTumorSegmentation("path/of/weight")
 
 # Get a liver mask of the image
+# save_path must be set with ONLY prefix. 
+# When saving, suffix of each model, such as mode_1 or mode_2_1, will be attached.
 image, mask = model.predict("path/of/image", 
                             save_path="path/for/save")
 ```
