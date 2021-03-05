@@ -146,55 +146,6 @@ def KidneyTumorSeg(
     return model
 
 
-# def KidneySeg(
-#     input_shape: Tuple[Optional[int], Optional[int], Optional[int], int], 
-#     num_labels: int, 
-#     axis: int = -1, 
-#     base_filter: int = 32, 
-#     depth_size: int = 4, 
-#     se_res_block: bool = True, 
-#     se_ratio: int = 16,
-#     noise: float = 0.1, 
-#     last_relu: bool = False, 
-#     atten_gate: bool = False
-# ) -> Model:
-
-#     input_img = Input(shape=input_shape, name='Input')
-#     d0 = GaussianNoise(noise)(input_img)
-#     d1 = Conv3D(base_filter, (3, 3, 3), use_bias=False, padding='same')(d0)
-#     d1 = InstanceNormalization(axis=axis)(d1)
-#     d1 = LeakyReLU(alpha=0.3)(d1)
-#     d2 = conv3d(d1, base_filter * 2, se_res_block=se_res_block)
-#     d3 = conv3d(d2, base_filter * 4, se_res_block=se_res_block)
-#     d4 = conv3d(d3, base_filter * 8, se_res_block=se_res_block)
-
-#     if depth_size == 4:
-#         d5 = conv3d(d4, base_filter * 16, se_res_block=se_res_block)
-#         u4 = deconv3d(d5, d4, base_filter * 8, se_res_block=se_res_block, atten_gate=atten_gate)
-#         u3 = deconv3d(u4, d3, base_filter * 4, se_res_block=se_res_block, atten_gate=atten_gate)
-#     elif depth_size == 3:
-#         u3 = deconv3d(d4, d3, base_filter * 4, se_res_block=se_res_block, atten_gate=atten_gate)
-#     else:
-#         raise Exception('depth size must be 3 or 4. you put ', depth_size)
-
-#     u2 = deconv3d(u3, d2, base_filter * 2, se_res_block=se_res_block, atten_gate=atten_gate)
-#     u1 = ZeroPadding3D(((0, 1), (0, 1), (0, 1)))(u2)
-#     u1 = Conv3DTranspose(base_filter, (2, 2, 2), strides=(2, 2, 2), use_bias=False, padding='same')(u1)
-#     u1 = InstanceNormalization(axis=axis)(u1)
-#     u1 = LeakyReLU(alpha=0.3)(u1)
-#     u1 = CropToConcat3D()([u1, d1])
-#     u1 = Conv3D(base_filter, (3, 3, 3), use_bias=False, padding='same')(u1)
-#     u1 = InstanceNormalization(axis=axis)(u1)
-#     u1 = LeakyReLU(alpha=0.3)(u1)
-#     output_img = Conv3D(num_labels, kernel_size=1, strides=1, padding='same', activation='sigmoid')(u1)
-
-#     if last_relu == True:
-#         output_img = ThresholdedReLU(theta=0.5)(output_img)
-
-#     model = Model(inputs=input_img, outputs=output_img)
-#     return model
-
-
 class KidneyUtils:
     @staticmethod
     def resample_img_asdim(
@@ -252,8 +203,59 @@ class KidneyUtils:
         structure_label = np.ones(shape=(3, 3, 3))
         new_vol = np.array(vol)
         new_vol[np.where(new_vol > 0.5)] = 1
-        labeled_vol, max_num_compo = label(new_vol, structure=structure_label)
+        _, max_num_compo = label(new_vol, structure=structure_label)
         if max_num_compo > 70:
             new_vol[:, :, :] = 0
         
+        return new_vol
+
+    @staticmethod
+    def CCL_1ststg_post(vol: np.ndarray) -> np.ndarray:
+        structure_label = np.ones(shape=(3, 3, 3))
+        new_vol = np.zeros(shape=np.shape(vol)).astype(np.uint8)
+        idx = 1
+        vol_binary = np.zeros(np.shape(vol)).astype(np.uint16)
+        vol_binary[np.where(vol == idx)] = 1
+
+        labeled_vol, max_num_compo = label(vol_binary, structure=structure_label)
+        volume_each_compo = [0]
+        for idx_comp in range(1, max_num_compo + 1):
+            volume_each_compo.append(len(np.where(labeled_vol == idx_comp)[0]))
+
+        idx_for_maxvol = np.argmax(volume_each_compo)
+        new_vol[np.where(labeled_vol == idx_for_maxvol)] = idx
+        volume_each_compo[idx_for_maxvol] = 0
+        idcs_first = np.where(labeled_vol == idx_for_maxvol)
+        # one more time
+
+        if max_num_compo > 1:
+            idx_for_maxvol = np.argmax(volume_each_compo)
+            idcs_second = np.where(labeled_vol == idx_for_maxvol)
+            if len(idcs_second[0]) > len(idcs_first[0]) * 0.2:
+                new_vol[np.where(labeled_vol == idx_for_maxvol)] = idx + 1
+
+        return new_vol
+
+    @staticmethod
+    def CCL(vol: np.ndarray, num_labels: int) -> np.ndarray:
+        structure_label = np.ones(shape=(3, 3, 3))
+        new_vol = np.zeros(shape=np.shape(vol)).astype(np.uint8)
+        for idx in range(1, num_labels):
+            # print('CCL_processing [%d]' % idx)
+            vol_binary = np.zeros(np.shape(vol)).astype(np.uint16)
+            vol_binary[np.where(vol == idx)] = 1
+
+            labeled_vol, max_num_compo = label(vol_binary, structure=structure_label)
+            # print('max_num_compo: %d' % max_num_compo)
+            if max_num_compo > 70:
+                # print('continue')
+                continue
+
+            volume_each_compo = [0]
+            for idx_comp in range(1, max_num_compo + 1):
+                volume_each_compo.append(len(np.where(labeled_vol == idx_comp)[0]))
+
+            idx_for_maxvol = np.argmax(volume_each_compo)
+            new_vol[np.where(labeled_vol == idx_for_maxvol)] = idx
+
         return new_vol

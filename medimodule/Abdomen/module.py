@@ -290,13 +290,27 @@ class KidneyTumorSegmentation(BaseModule):
             (numpy ndarray) image
         """
 
+        def preprocess_coreline(raw_ct_frame, config):
+            img_ct = sitk.GetImageFromArray(raw_ct_frame)
+            img_ct_rs = KidneyUtils.resample_img_asdim(img_ct, config["input_dim"], c_val=-1024)
+            raw_ct_rs = sitk.GetArrayFromImage(img_ct_rs)
+            raw_ct_rs_normed = KidneyUtils.normalize_vol(
+                raw_ct_rs, norm_wind_lower=config["wlower"], norm_wind_upper=config["wupper"])
+            raw_ct_rs_normed = raw_ct_rs_normed[None,...,None]
+
+            return raw_ct_rs_normed
+
+
         if path is None:
             assert imageo is not None and mask is not None
         else:
             assert imageo is None and mask is None
 
         if mode == "1":
+            # Tuple[np.ndarray, List[np.ndarray], Optional[dict], bool]
             # coreline soft
+            assert path is not None
+
             img_ct_sag = sitk.ReadImage(path)
             img_ct_axial = KidneyUtils.transaxis(img_ct_sag, dtype=np.int16)
             raw_ct = sitk.GetArrayFromImage(img_ct_axial)
@@ -322,17 +336,12 @@ class KidneyTumorSegmentation(BaseModule):
                             raw_ct_frame = raw_ct[z_start:z_start+200,:,-raw_ct_frame_shape[2]:]
                             raw_ct_frame = raw_ct_frame[:,:,-1::-1]
 
-                        img_ct = sitk.GetImageFromArray(raw_ct_frame)
-                        img_ct_rs = KidneyUtils.resample_img_asdim(img_ct, self.config["1"]["input_dim"], c_val=-1024)
-                        raw_ct_rs = sitk.GetArrayFromImage(img_ct_rs)
-                        raw_ct_rs_normed = KidneyUtils.normalize_vol(
-                            raw_ct_rs, norm_wind_lower=self.config["1"]["wlower"], norm_wind_upper=self.config["1"]["wupper"])
-                        raw_ct_rs_normed = raw_ct_rs_normed[None,...,None]
+                        raw_ct_rs_normed = preprocess_coreline(raw_ct_frame, self.config["1"])
                         imgs.append(raw_ct_rs_normed)
                     imgs = np.concatenate(imgs, axis=0)
                     whole_imgs.append(imgs)
 
-                return raw_ct, whole_imgs[0], whole_imgs[1], None, None, True # Tuple[np.ndarray, np.ndarray, np.ndarray, bool]
+                return raw_ct, whole_imgs, None, True
                 
             else:
                 z_start_dst = int((200 - raw_ct_shape[0]) / 2)
@@ -356,19 +365,68 @@ class KidneyTumorSegmentation(BaseModule):
                         # left
                         raw_ct_frame = raw_ct_frame[...,-1::-1]
 
-                    img_ct = sitk.GetImageFromArray(raw_ct_frame)
-                    img_ct_rs = KidneyUtils.resample_img_asdim(img_ct, self.config["1"]["input_dim"], c_val=-1024)
-                    raw_ct_rs = sitk.GetArrayFromImage(img_ct_rs)
-                    raw_ct_rs_normed = KidneyUtils.normalize_vol(
-                        raw_ct_rs, norm_wind_lower=self.config["1"]["wlower"], norm_wind_upper=self.config["1"]["wupper"])
-                    raw_ct_rs_normed = raw_ct_rs_normed[None,...,None]
+                    raw_ct_rs_normed = preprocess_coreline(raw_ct_frame, self.config["1"])
                     whole_imgs.append(raw_ct_rs_normed)
 
-                return raw_ct, whole_imgs[0], whole_imgs[1], z_start_dst, z_end_dst, False # Tuple[np.ndarray, np.ndarray, np.ndarray, int, int, bool]
+                return raw_ct, whole_imgs, {"z_start": z_start_dst, "z_end": z_end_dst}, False
 
         elif mode == "2_1":
+            # Tuple[np.ndarray, List[np.ndarray], List[List[int]], List[List[int]]]
             # coreline soft
-            raise NotImplementedError()
+            assert imageo is not None and mask is not None
+
+            raw_ct_shape = np.shape(imageo)
+
+            idcs_label = [np.where(mask == 1), np.where(mask == 2)]
+            label_x_pos = [il[2].mean() for il in idcs_label]
+            if len(idcs_label[1][0]) > len(idcs_label[0][0]) * 0.2:
+                is_both_kidney = True
+            else:
+                is_both_kidney = False
+
+            if is_both_kidney:
+                if label_x_pos[0] > label_x_pos[1]:
+                    # swap label btw. 1 and 2
+                    mask[idcs_label[0]] = 2
+                    mask[idcs_label[1]] = 1
+                    direction_kidney = [True, True]
+                else:
+                    direction_kidney = [True, True]
+            else:
+                if np.min(idcs_label[0][2]) < raw_ct_shape[2] / 2:
+                    mask[idcs_label[0]] = 1
+                    mask[idcs_label[1]] = 0
+                    direction_kidney = [True, False]
+                else:
+                    mask[idcs_label[0]] = 2
+                    mask[idcs_label[1]] = 0
+                    direction_kidney = [False, True]
+
+            whole_imgs = []
+            whole_starts = []
+            whole_ends = []
+            for i in range(2):
+                # extract kidney coordinate
+                if direction_kidney[i]:
+                    idcs_label = np.where(mask == i+1)
+                    kidney_start = [np.max((np.min(idcs_label[j]-16), 0)) for j in range(3)]
+                    kidney_end = [np.min((np.max(idcs_label[j]+16), raw_ct_shape[j])) for j in range(3)]
+
+                    raw_ct_2nd_shape = [int(kidney_end[j]-kidney_start[j]) for j in range(3)]
+                    raw_ct_frame = np.ones(raw_ct_2nd_shape, dtype=np.float32) * -1024
+                    raw_ct_frame[:, :, :] = imageo[kidney_start[0]:kidney_end[0],
+                                                   kidney_start[1]:kidney_end[1],
+                                                   kidney_start[2]:kidney_end[2]]
+                    if i == 1:
+                        # left
+                        raw_ct_frame = raw_ct_frame[...,-1::-1]
+
+                    raw_ct_rs_normed = preprocess_coreline(raw_ct_frame, self.config["2_1"])
+                    whole_imgs.append(raw_ct_rs_normed)
+                    whole_starts.append(kidney_start)
+                    whole_ends.append(kidney_end)
+            
+            return imageo, whole_imgs, whole_starts, whole_ends
 
         else:
             # MI2RL
@@ -400,8 +458,6 @@ class KidneyTumorSegmentation(BaseModule):
             #              (img-80.96544691699005)/58.84357050328374 
             #              for img in image]
 
-        
-        return imageo, image
 
     def predict(
         self, 
@@ -423,10 +479,10 @@ class KidneyTumorSegmentation(BaseModule):
         ##################################
         ############# mode 1 #############
         ##################################
-        imgo, right, left, z_start, z_end, is_large_z = self._preprocessing(mode="1", path=path)
+        imgo, imgs, options, is_large_z = self._preprocessing(mode="1", path=path)
 
         raw_pred_whole = np.zeros_like(imgo)
-        for i, img in enumerate([right, left]):
+        for i, img in enumerate(imgs):
             # set shape
             if i == 0:
                 # right
@@ -443,8 +499,9 @@ class KidneyTumorSegmentation(BaseModule):
                 raw_pred_tmp_cnt = raw_pred_tmp.copy()
                 num_imgs = img.shape[0]
                 for n in range(num_imgs):
-                    raw_pred_tmp[z_start:z_start+200] += np.squeeze(self.model["1"].predict(np.expand_dims(img[n], axis=0)))
-                    raw_pred_tmp_cnt[z_start:z_start+200] += 1
+                    raw_pred_tmp[options["z_start"]:options["z_start"]+200] += \
+                        np.squeeze(self.model["1"].predict(np.expand_dims(img[n], axis=0)))
+                    raw_pred_tmp_cnt[options["z_start"]:options["z_start"]+200] += 1
 
                 raw_pred_tmp[np.where(raw_pred_tmp_cnt > 0)] /= raw_pred_tmp_cnt[np.where(raw_pred_tmp_cnt > 0)]
                 raw_pred_tmp = np.squeeze(raw_pred_tmp)
@@ -453,17 +510,13 @@ class KidneyTumorSegmentation(BaseModule):
                     KidneyUtils.resample_img_asdim(sitk.GetImageFromArray(raw_pred_tmp), 
                     tuple(reversed(raw_ct_shape)), 
                     interp=sitk.sitkNearestNeighbor))
-                raw_pred[np.where(raw_pred > 0.5)] = 1
+                raw_pred[np.where(raw_pred > .5)] = 1
                 raw_pred = KidneyUtils.CCL_check_1ststg(raw_pred)
 
             else:
                 result = self.model["1"](img)
-                if result.shape[-1] == 1:
-                    result = np.squeeze(result)
-                else:
-                    result = np.squeeze(np.argmax(result, axis=-1))
-
-                result = result[z_start:z_end]
+                result = np.squeeze(result)
+                result = result[options["z_start"]:options["z_end"]]
                 raw_pred = sitk.GetArrayFromImage(
                     KidneyUtils.resample_img_asdim(sitk.GetImageFromArray(result),
                     tuple(reversed(raw_ct_shape)),
@@ -482,12 +535,58 @@ class KidneyTumorSegmentation(BaseModule):
                 raw_pred_whole_left_tmp[np.where(raw_pred > 0)] = raw_pred[np.where(raw_pred > 0)]
                 raw_pred_whole[...,-raw_pred.shape[2]:] = raw_pred_whole_left_tmp
 
-            mask_mode1 = KidneyUtils.CCL_check_1ststg(raw_pred_whole)
+        mask_mode1 = KidneyUtils.CCL_1ststg_post(raw_pred_whole)
+
+
+        ##################################
+        ############ mode 2_1 ############
+        ##################################
+        imgo, imgs, starts, ends = self._preprocessing(mode="2_1", imageo=imgo, mask=mask_mode1)
+
+        mask_mode2_1 = np.zeros_like(imgo)
+        for i, img in enumerate(imgs):
+            shape = (int(ends[i][0] - starts[i][0]), 
+                     int(ends[i][1] - starts[i][1]), 
+                     int(ends[i][2] - starts[i][2]))
+            result = self.model["2_1"](img)
+            result = np.squeeze(np.argmax(result, axis=-1))
+            raw_pred = sitk.GetArrayFromImage(
+                KidneyUtils.resample_img_asdim(sitk.GetImageFromArray(result),
+                tuple(reversed(shape)),
+                interp=sitk.sitkNearestNeighbor))
+            if i == 1:
+                # left
+                raw_pred = raw_pred[...,-1::-1]
+
+            raw_pred_tmp = np.array(raw_pred)
+            raw_pred_tmp[np.where(raw_pred_tmp > 0)] = 1
+            raw_pred_tmp = KidneyUtils.CCL(raw_pred_tmp, num_labels=2)
+            raw_pred[np.where(raw_pred_tmp == 0)] = 0
+
+            if i == 0:
+                # right
+                mask_mode2_1[starts[i][0]:ends[i][0], 
+                             starts[i][1]:ends[i][1],
+                             starts[i][2]:ends[i][2]] = raw_pred
+            else:
+                # left
+                mask_mode2_1_tmp = mask_mode2_1[starts[i][0]:ends[i][0],
+                                                starts[i][1]:ends[i][1], 
+                                                starts[i][2]:ends[i][2]]
+                mask_mode2_1_tmp[np.where(raw_pred > 0)] = raw_pred[np.where(raw_pred > 0)]
+                mask_mode2_1[starts[i][0]:ends[i][0], 
+                             starts[i][1]:ends[i][1],
+                             starts[i][2]:ends[i][2]] = mask_mode2_1_tmp
+
+        
+        ##################################
+        ############ mode 2_2 ############
+        ##################################
         
         if save_path:
             x_nib = nib.load(os.path.join(path))
-            for suffix, mask in zip(["mask_mode1.nii"], [mask_mode1]):
+            for suffix, mask in zip(["mask_mode1.nii", "mask_model2_1.nii"], [mask_mode1, mask_mode2_1]):
                 p_nib = nib.Nifti1Image(mask[-1::-1].astype(np.uint8), x_nib.affine)
                 nib.save(p_nib, save_path+"_"+suffix)
 
-        return imgo, (mask_mode1,)
+        return imgo, (mask_mode1, mask_mode2_1)
