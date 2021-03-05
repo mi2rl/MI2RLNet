@@ -261,7 +261,6 @@ class KidneyTumorSegmentation(BaseModule):
                 num_labels=1,
                 base_filter=32,
                 depth=self.config["1"]["depth"],
-                se_res_block=True,
                 se_ratio=16,
                 last_relu=True),
             "2_1": KidneyTumorSeg(
@@ -269,10 +268,18 @@ class KidneyTumorSegmentation(BaseModule):
                 num_labels=3,
                 base_filter=32,
                 depth=self.config["2_1"]["depth"],
-                se_res_block=True,
                 se_ratio=16,
-                last_relu=False),
-        }
+                last_relu=False)}
+
+        self.model.update({
+            mode: KidneyTumorSeg(
+                input_shape=(None, None, None, 1),
+                num_labels=3,
+                base_filter=32,
+                depth=self.config[mode]["depth"],
+                se_ratio=16,
+                last_relu=False) 
+            for mode in ["2_2", "2_3", "2_4", "2_5"]})
 
     def _preprocessing(
         self, 
@@ -430,33 +437,85 @@ class KidneyTumorSegmentation(BaseModule):
 
         else:
             # MI2RL
-            raise NotImplementedError()
-            # config = self.config[mode]
-            # if config["task"] == "tumor":
-            #     cuts = [mask.copy() for _ in range(2)]
-            #     cuts[0][int(cuts[0].shape[0]//2):] = 0
-            #     cuts[1][:-int(cuts[1].shape[0]//2)] = 0
+            assert imageo is not None and mask is not None
+            imgo = np.transpose(imageo[::-1], axes=[2, 1, 0])
+            mask = np.transpose(mask[::-1], axes=[2, 1, 0])
 
-            #     if cuts[0].sum() == 0 or cuts[1].sum() == 0:
-            #         return imageo, None
+            config = self.config[mode]
+            if config["task"] == "tumor":
+                # getvoi
+                cuts = [mask.copy() for _ in range(2)]
+                cuts[0][int(cuts[0].shape[0]//2):] = 0
+                cuts[1][:-int(cuts[1].shape[0]//2)] = 0
+
+                if cuts[0].sum() == 0 or cuts[1].sum() == 0:
+                    return imageo, None
                 
-            #     coords = [np.where(c != 0) for c in cuts]
-            #     bboxs = [[min(c[0]), max(c[0]),
-            #               min(c[1]), max(c[1]),
-            #               min(c[2]), max(c[2])] for c in coords]
+                coords = [np.where(c != 0) for c in cuts]
+                bboxs = [[min(c[0]), max(c[0]),
+                          min(c[1]), max(c[1]),
+                          min(c[2]), max(c[2])] for c in coords]
                 
-            #     # crop
-            #     image = [imageo[b[1]+1:b[0]:-1,b[2]:b[3]+1,b[4]:b[5]+1] 
-            #              if config["task"] == "tumor" else 
-            #              imageo[b[1]+1:b[0]:-1,b[2]:b[3]+1,b[4]:b[5]+1] 
-            #              for b in bboxs]
-            #     # windowing
-            #     image = [np.clip(img, config["wlower"], config["wupper"]) for img in image]
-            #     # standardization
-            #     image = [(img-img.min())/(img.max()-img.min()) 
-            #              if config["standard"] == "minmax" else
-            #              (img-80.96544691699005)/58.84357050328374 
-            #              for img in image]
+                # crop
+                imgs = [imgo[max((0, b[0])):min((imgo.shape[0]-1, b[1]+1)),
+                             max((0, b[2])):min((imgo.shape[1]-1, b[3]+1)),
+                             max((0, b[4])):min((imgo.shape[2]-1, b[5]+1))] for b in bboxs]
+                imgs[1] = imgs[1][::-1]
+
+                option = {"bboxs": bboxs}
+
+            else:
+                # tumor1
+                # getvoi
+                threshold = [380, 230, 72]
+                coords = np.where(mask != 0)
+                bbox = [min(coords[0]), max(coords[0]), 
+                        min(coords[1]), max(coords[1]), 
+                        min(coords[2]), max(coords[2])]
+                center = [int(bbox[0]+bbox[1])//2,int(bbox[2]+bbox[3])//2,int(bbox[4]+bbox[5])//2]
+                bbox = [center[0]-int(threshold[0]//2), center[0]+int(threshold[0]//2),
+                        center[1]-int(threshold[1]//2), center[1]+int(threshold[1]//2),
+                        center[2]-int(threshold[2]//2), center[2]+int(threshold[2]//2)]
+
+                # crop
+                img = imgo[max((0, bbox[0])):min((imgo.shape[0]-1, bbox[1]+1)),
+                           max((0, bbox[2])):min((imgo.shape[1]-1, bbox[3]+1)),
+                           max((0, bbox[4])):min((imgo.shape[2]-1, bbox[5]+1))]
+                diff = [(bbox[1]-bbox[0])-img.shape[0],
+                        (bbox[3]-bbox[2])-img.shape[1],
+                        (bbox[5]-bbox[4])-img.shape[2]]
+                diff = [d if d % 2 == 0 else d+1 for d in diff]
+
+                # pad
+                img = np.pad(img, ((diff[0]//2,diff[0]//2),(diff[1]//2,diff[1]//2),(diff[2]//2,diff[2]//2)), 'minimum')
+
+                diff1 = [0, 0, 0] # shrink
+                if img.shape[0] > bbox[1]-bbox[0]:
+                    img = img[:-1]
+                    diff1[0] -= 1
+                if img.shape[1] > bbox[3]-bbox[2]:
+                    img = img[:,:-1]
+                    diff1[1] -= 1
+                if img.shape[2] > bbox[5]-bbox[4]:
+                    img = img[:,:,:-1]
+                    diff1[2] -= 1
+
+                imgs = [img]
+                option = {"bbox": bbox, "diff": diff, "diff1": diff1}
+
+            # windowing
+            imgs = [np.clip(img, config["wlower"], config["wupper"]) for img in imgs]
+
+            # standardization
+            imgs = [(img-img.min())/(img.max()-img.min()) 
+                    if config["standard"] == "minmax" else
+                    (img-80.96544691699005)/58.84357050328374 
+                    for img in imgs]
+
+            # expand dims
+            imgs = [img[None,...,None] for img in imgs]
+
+            return imageo, imgs, option
 
 
     def predict(
@@ -500,7 +559,7 @@ class KidneyTumorSegmentation(BaseModule):
                 num_imgs = img.shape[0]
                 for n in range(num_imgs):
                     raw_pred_tmp[options["z_start"]:options["z_start"]+200] += \
-                        np.squeeze(self.model["1"].predict(np.expand_dims(img[n], axis=0)))
+                        np.squeeze(self.model["1"](np.expand_dims(img[n], axis=0)))
                     raw_pred_tmp_cnt[options["z_start"]:options["z_start"]+200] += 1
 
                 raw_pred_tmp[np.where(raw_pred_tmp_cnt > 0)] /= raw_pred_tmp_cnt[np.where(raw_pred_tmp_cnt > 0)]
@@ -580,13 +639,49 @@ class KidneyTumorSegmentation(BaseModule):
 
         
         ##################################
-        ############ mode 2_2 ############
+        ########### mode 2_2~5 ###########
         ##################################
-        
+        whole_results = {}
+        for mode in ["2_2", "2_3", "2_4", "2_5"]:
+            imgo, imgs, option = self._preprocessing(mode=mode, imageo=imgo, mask=mask_mode1)
+
+            whole_mask = np.zeros(imgo.shape[::-1])
+            for i, img in enumerate(imgs):
+                result = self.model[mode](img)
+                result = np.squeeze(result).argmax(axis=-1)
+
+                if self.config[mode]["task"] == "tumor":
+                    if i == 1:
+                        result = result[::-1]
+                    bbox = option["bboxs"][i]
+                    whole_mask[max((0, bbox[0])):min((whole_mask.shape[0]-1, bbox[1]+1)),
+                               max((0, bbox[2])):min((whole_mask.shape[1]-1, bbox[3]+1)),
+                               max((0, bbox[4])):min((whole_mask.shape[2]-1, bbox[5]+1))] = result
+
+                else:
+                    bbox = option["bbox"]
+                    diff = option["diff"]
+                    diff1 = option["diff1"]
+                    whole_mask[max((0, bbox[0])):min((whole_mask.shape[0], bbox[1])),
+                               max((0, bbox[2])):min((whole_mask.shape[1], bbox[3])),
+                               max((0, bbox[4])):min((whole_mask.shape[2], bbox[5]))] = \
+                        result[diff[0]//2:-diff[0]//2-diff1[0] if -diff[0]//2-diff1[0] < 0 else result.shape[0],
+                               diff[1]//2:-diff[1]//2-diff1[1] if -diff[1]//2-diff1[1] < 0 else result.shape[1],
+                               diff[2]//2:-diff[2]//2-diff1[2] if -diff[2]//2-diff1[2] < 0 else result.shape[2]]
+            
+            whole_mask = np.transpose(whole_mask, axes=[2, 1, 0])
+            whole_results.update({mode: whole_mask[::-1]})
+
         if save_path:
-            x_nib = nib.load(os.path.join(path))
-            for suffix, mask in zip(["mask_mode1.nii", "mask_model2_1.nii"], [mask_mode1, mask_mode2_1]):
+            # coreline
+            x_nib = nib.load(path)
+            for suffix, mask in zip(["mask_mode1.nii", "mask_mode2_1.nii"], [mask_mode1, mask_mode2_1]):
                 p_nib = nib.Nifti1Image(mask[-1::-1].astype(np.uint8), x_nib.affine)
                 nib.save(p_nib, save_path+"_"+suffix)
 
-        return imgo, (mask_mode1, mask_mode2_1)
+            # mi2rl
+            for k, v in whole_results.items():
+                p_nib = nib.Nifti1Image(v[-1::-1].astype(np.uint8), x_nib.affine)
+                nib.save(p_nib, save_path+f"_mask_mode{k}.nii")
+
+        return imgo, (mask_mode1, mask_mode2_1, whole_results["2_2"], whole_results["2_3"], whole_results["2_4"], whole_results["2_5"])

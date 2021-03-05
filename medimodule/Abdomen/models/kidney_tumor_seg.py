@@ -109,7 +109,6 @@ def KidneyTumorSeg(
     num_labels: int, 
     base_filter: int = 32, 
     depth: int = 4, 
-    se_res_block: bool = True, 
     se_ratio: int = 16,
     noise: float = 0.1, 
     last_relu: bool = False
