@@ -21,7 +21,10 @@ from medimodule.Chest.models.lr_mark_detection_model.anchors import anchors_for_
 class ViewpointClassifier(BaseModule):
     def __init__(self, weight_path: Optional[str] = None):
         """
-        Classify PA / Lateral / Others View
+        Classifying PA / Lateral / Others
+        
+        Args:
+            (string) weight_path : pretrained weight path (optional)
         """
 
         self.model = ViewCls()
@@ -32,12 +35,11 @@ class ViewpointClassifier(BaseModule):
 
     def _preprocessing(self, path: str) -> Tuple[np.array, np.array]:
         """
-        Image preprocessing for classifying Viewpoint
-
         Args:
             (string) path : dicom path
         Return:
-            (numpy ndarray) img 
+            (numpy ndarray) imgo : original image
+            (numpy ndarray) img  : preprocessed image
         """
         
         imgo = np.squeeze(sitk.GetArrayFromImage(sitk.ReadImage(path)))
@@ -61,12 +63,13 @@ class ViewpointClassifier(BaseModule):
         save_path: Optional[str] = None
     ) -> Tuple[np.array, str]:
         """
-        View Classification
-
         Args:
-            (numpy ndarray) img : numpy array which have (H, W, C) shape.
+            (string) path : image path
+            (string) save_path : save path
         Return:
-            (int) age : age prediction result (Month)
+            (Tuple) (imgo, result)
+            (numpy ndarray) imgo : original image
+            (string) result : PA / Lateral / Others
         """
 
         path = os.path.abspath(path)
@@ -92,6 +95,8 @@ class EnhanceCTClassifier(BaseModule):
     def __init__(self, weight_path: Optional[str] = None):
         """
         Classify Enhanced CT vs Non-Enhanced CT
+        Args:
+            (string) weight_path : pretrained weight path (optional)
         """
 
         self.model = EnhanceCls()
@@ -102,12 +107,11 @@ class EnhanceCTClassifier(BaseModule):
 
     def _preprocessing(self, path: str) -> Tuple[np.array, np.array]:
         """
-        Image preprocessing for classifying Enhanced CT vs. Non-Enhanced CT
-
         Args:
-            (numpy ndarray) img : numpy array which have (H, W, C) shape.
+            (string) path : dicom path
         Return:
-            (numpy ndarray) results : preprocessed image
+            (numpy ndarray) imgo : original image
+            (numpy ndarray) img  : preprocessed image
         """
         # image size settings
         
@@ -199,11 +203,11 @@ class LRmarkDetection(BaseModule):
         Preprocess the image from the path
             - png : mean/SD scaling
         Args:
-            (string) path : absolute path of image
+            (string) path : image path
         Return: tuple
             (numpy ndarray) new_image : scaled image
-            (numpy ndarray) src_image : origin_image
             (float) scale, offset_h, offset_w, image_size, h, w : scaled image informations
+            (numpy ndarray) imgo : original image
         """
         
         '''
