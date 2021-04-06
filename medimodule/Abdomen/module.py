@@ -348,7 +348,7 @@ class KidneyTumorSegmentation(BaseModule):
                     imgs = np.concatenate(imgs, axis=0)
                     whole_imgs.append(imgs)
 
-                return raw_ct, whole_imgs, None, True
+                return raw_ct, whole_imgs, {"z_start": z_start}, True
                 
             else:
                 z_start_dst = int((200 - raw_ct_shape[0]) / 2)
@@ -559,7 +559,7 @@ class KidneyTumorSegmentation(BaseModule):
                 num_imgs = img.shape[0]
                 for n in range(num_imgs):
                     raw_pred_tmp[options["z_start"]:options["z_start"]+200] += \
-                        np.squeeze(self.model["1"](np.expand_dims(img[n], axis=0)))
+                        self.model["1"](np.expand_dims(img[n], axis=0))[0]
                     raw_pred_tmp_cnt[options["z_start"]:options["z_start"]+200] += 1
 
                 raw_pred_tmp[np.where(raw_pred_tmp_cnt > 0)] /= raw_pred_tmp_cnt[np.where(raw_pred_tmp_cnt > 0)]
