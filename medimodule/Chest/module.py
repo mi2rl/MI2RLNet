@@ -127,8 +127,8 @@ class EnhanceCTClassifier(BaseModule):
             tmp_img = imgo.astype('float32')
             tmp_img2 = np.copy(tmp_img)
             
-            window_width = 2048.
-            window_level = 1024.
+            window_width = 450.
+            window_level = 550.
 
             lower = (window_level-window_width)
             upper = (window_level+window_width)
